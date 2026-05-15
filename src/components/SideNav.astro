@@ -1,0 +1,114 @@
+---
+const items = [
+  {
+    href: '#about',
+    label: 'About',
+    icon: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  },
+  {
+    href: '#experience',
+    label: 'Experience',
+    icon: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  },
+  {
+    href: '#skills',
+    label: 'Skills',
+    icon: '<polyline points="8 6 2 12 8 18"/><polyline points="16 6 22 12 16 18"/>',
+  },
+  {
+    href: '#projects',
+    label: 'Selected projects',
+    icon: '<path d="M2 7v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-8L10 4H4a2 2 0 0 0-2 2z"/>',
+  },
+  {
+    href: '#education',
+    label: 'Education',
+    icon: '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>',
+  },
+  {
+    href: '#contact',
+    label: 'Contact',
+    icon: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  },
+];
+---
+
+<aside class="no-print sticky top-8 mt-20 hidden h-fit w-max xl:block">
+  <nav class="flex flex-col gap-2 rounded-lg bg-paper p-2 shadow-md" aria-label="Sections">
+    {items.map((it, i) => (
+      <a
+        href={it.href}
+        title={it.label}
+        aria-label={it.label}
+        data-nav-link
+        data-nav-target={it.href.slice(1)}
+        class:list={["sidenav-btn", i === 0 && "is-active"]}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={it.icon} />
+      </a>
+    ))}
+  </nav>
+</aside>
+
+<style>
+  .sidenav-btn {
+    display: grid;
+    place-items: center;
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 0.5rem;
+    color: var(--muted);
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .sidenav-btn:hover {
+    color: var(--accent);
+    background-color: color-mix(in oklab, var(--accent-soft) 22%, transparent);
+  }
+  .sidenav-btn.is-active {
+    color: var(--accent-on);
+    background-color: var(--accent);
+  }
+  .sidenav-btn.is-active:hover {
+    color: var(--accent-on);
+    background-color: var(--accent);
+    filter: brightness(1.08);
+  }
+</style>
+
+<script>
+  // Highlight the nav icon for the section currently in view.
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]');
+  if (links.length) {
+    const targets = new Map<string, HTMLAnchorElement>();
+    links.forEach(l => {
+      const id = l.getAttribute('data-nav-target');
+      if (id) targets.set(id, l);
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Prefer the entry with the largest intersection ratio that's intersecting.
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const id = (visible.target as HTMLElement).id;
+        if (!id || !targets.has(id)) return;
+        links.forEach(l => l.classList.toggle('is-active', l === targets.get(id)));
+      },
+      { rootMargin: '-25% 0px -60% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+
+    targets.forEach((_, id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    // Click → mark active immediately for snappy feedback.
+    links.forEach(l => {
+      l.addEventListener('click', () => {
+        links.forEach(x => x.classList.toggle('is-active', x === l));
+      });
+    });
+  }
+</script>

@@ -1,0 +1,21 @@
+---
+// Devscard-style floating theme toggle, bottom-left, fixed.
+---
+
+<button
+  type="button"
+  data-theme-toggle
+  aria-label="Toggle theme"
+  class="no-print fixed bottom-3 left-3 z-40 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-paper text-muted shadow-lg transition hover:bg-bg-soft hover:text-accent">
+  <svg data-theme-icon class="h-[1.2rem] w-[1.2rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" class="theme-sun"></circle>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" class="theme-sun"></path>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" class="theme-moon"></path>
+  </svg>
+</button>
+
+<style>
+  [data-theme-icon] .theme-moon { display: none; }
+  .dark [data-theme-icon] .theme-sun { display: none; }
+  .dark [data-theme-icon] .theme-moon { display: inline; }
+</style>

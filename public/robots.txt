@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /recruiter
+Allow: /full
+Disallow: /curious
+
+Sitemap: https://jonathan-aerts.dev/sitemap-index.xml

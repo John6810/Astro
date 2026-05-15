@@ -1,0 +1,36 @@
+---
+import '@fontsource-variable/geist-mono';
+import '../styles/global.css';
+
+import BaseHead from '../components/BaseHead.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  canonicalURL?: string;
+}
+const { title, description, canonicalURL } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <BaseHead title={title} description={description} canonicalURL={canonicalURL} />
+    <meta name="generator" content={Astro.generator} />
+    <!-- Theme bootstrap: apply stored or system preference before paint to avoid flash -->
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = stored ? stored === 'dark' : prefersDark;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="font-body text-ink">
+    <a href="#top" class="skip-to-content">Skip to content</a>
+    <slot />
+  </body>
+</html>

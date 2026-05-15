@@ -1,0 +1,68 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  canonicalURL?: string;
+  themeColor?: string;
+  noindex?: boolean;
+}
+const {
+  title,
+  description = "Senior Cloud Platform Architect with 15+ years IT experience. Specialized in Azure Landing Zones, Terraform/GitOps, multi-region governance, and enterprise-scale cloud platforms.",
+  ogImage = "/images/og-preview.png",
+  canonicalURL = "https://jonathan-aerts.dev",
+  themeColor = "#f5f1ea",
+  noindex = false,
+} = Astro.props;
+
+const siteOrigin = "https://jonathan-aerts.dev";
+const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteOrigin}${ogImage}`;
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content={themeColor} />
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+
+<meta name="description" content={description} />
+<meta name="robots" content={noindex ? "noindex, follow" : "index, follow"} />
+<link rel="canonical" href={canonicalURL} />
+<meta name="author" content="Jonathan Aerts" />
+
+<meta property="og:type" content="profile" />
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={fullOgImage} />
+<meta property="og:locale" content="fr_BE" />
+<meta property="og:locale:alternate" content="en_US" />
+<meta property="og:locale:alternate" content="ja_JP" />
+<meta property="og:site_name" content="Jonathan Aerts — Cloud Architect Portfolio" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={fullOgImage} />
+
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Jonathan Aerts",
+  "jobTitle": "Senior Cloud Platform Architect",
+  "url": "https://jonathan-aerts.dev",
+  "email": "hi@jonathan-aerts.dev",
+  "image": "https://jonathan-aerts.dev/images/avatar.jpg",
+  "sameAs": ["https://linkedin.com/in/jaerts085/"],
+  "knowsAbout": ["Azure Landing Zone", "Terraform", "Terragrunt", "Azure CAF", "Virtual WAN", "Defender for Cloud", "Sentinel", "Kubernetes", "AWS", "HashiCorp"],
+  "knowsLanguage": ["fr", "en", "ja"],
+  "worksFor": { "@type": "Organization", "name": "POST Luxembourg" },
+  "alumniOf": { "@type": "EducationalOrganization", "name": "Haute École de la Province de Liège" },
+  "address": { "@type": "PostalAddress", "addressCountry": "BE" }
+})} />
+
+<title>{title}</title>

@@ -1,0 +1,61 @@
+---
+type Project = {
+  title: string;
+  tagline: string;
+  description: string;
+  tags: string[];
+  link?: { url: string; label: string };
+};
+
+const projects: Project[] = [
+  {
+    title: 'Terraform Azure Module Library',
+    tagline: 'Bibliothèque open source · alignée AVM / CAF',
+    description: "Bibliothèque open source de modules Terraform Azure que je maintiens — networking, AKS, Key Vault, RBAC, Private Endpoints, FinOps Hub, Palo Alto HA, et plus. Patterns AVM (validation, lookup, locks), telemetry, diagnostic settings et naming conventions par défaut.",
+    tags: ['Terraform', 'Azure', 'AVM', 'IaC', 'GitHub Actions'],
+    link: {
+      url: 'https://github.com/John6810/terraform-azurerm-modules',
+      label: '📦 github.com/John6810/terraform-azurerm-modules →',
+    },
+  },
+  {
+    title: 'Stock Screener',
+    tagline: 'Screening quantitatif · K8s / ArgoCD · 359 tests',
+    description: "Plateforme personnelle de screening quantitatif et gestion d'ordres pour swing trading sur Interactive Brokers. Architecture multi-couches : CLI (19 commandes), REST API FastAPI (19 endpoints), CronJobs K8s pour le scan automatique, bot Discord companion. Scoring technique + fondamental, risk management automatisé (heat portfolio, exposition sectorielle, earnings blackout), journal et performance tracking. Déployée en GitOps via ArgoCD sur le cluster homelab.",
+    tags: ['Python', 'FastAPI', 'Kubernetes', 'ArgoCD', 'Docker', 'Interactive Brokers', 'pytest'],
+  },
+  {
+    title: 'Homelab Kubernetes',
+    tagline: 'Cluster bare-metal · GitOps end-to-end',
+    description: "Cluster Kubernetes 2 nœuds bare-metal, GitOps via ArgoCD ApplicationSet, observabilité Prometheus/Grafana, ingress Traefik, MetalLB pour L2 load balancing, stockage hybride SMB/RawFile CSI. Sealed Secrets pour la gestion des secrets en GitOps. Sandbox de validation des patterns avant production.",
+    tags: ['Kubernetes', 'ArgoCD', 'Traefik', 'Prometheus', 'MetalLB', 'Sealed Secrets'],
+  },
+];
+---
+
+<section id="projects" class="card p-8">
+  <h2 class="h-section">Selected projects</h2>
+
+  <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {projects.map((p) => (
+      <article class="card-soft flex flex-col gap-3 p-5 transition duration-300 hover:translate-y-[-2px]">
+        <header class="flex flex-col gap-1">
+          <h3 class="text-base font-extrabold leading-snug text-ink">{p.title}</h3>
+          <p class="font-mono text-[11px] uppercase tracking-[0.06em] text-accent">{p.tagline}</p>
+        </header>
+        <p class="text-sm leading-relaxed text-muted">{p.description}</p>
+        <div class="mt-auto flex flex-wrap gap-1.5 pt-2">
+          {p.tags.map((t) => (
+            <span class="tag">{t}</span>
+          ))}
+        </div>
+        {p.link && (
+          <a href={p.link.url} target="_blank" rel="noopener noreferrer"
+             class="mt-1 inline-flex items-baseline gap-1 self-start text-[13px] font-medium text-accent transition-colors decoration-2 underline-offset-4 hover:underline">
+            {p.link.label}
+          </a>
+        )}
+      </article>
+    ))}
+  </div>
+</section>

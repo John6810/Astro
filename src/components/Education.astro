@@ -1,0 +1,81 @@
+---
+const certsDone = [
+  'AZ-104 — Azure Administrator',
+  'AZ-500 — Azure Security Engineer',
+  'AZ-700 — Azure Network Engineer',
+  'HashiCorp Terraform Associate',
+];
+const certsWip = [
+  'AZ-305 — Azure Solutions Architect Expert',
+  'AWS Solutions Architect Associate',
+];
+---
+
+<section id="education" class="card p-8">
+  <h2 class="h-section" data-i18n="section_education">Formation, certifications & langues</h2>
+
+  <div class="mt-8 grid gap-10 sm:grid-cols-2">
+    <!-- Diplôme -->
+    <div class="edu-item flex flex-col gap-2">
+      <span class="eyebrow">Diplôme</span>
+      <h3 class="text-base font-extrabold leading-snug text-ink" data-i18n="edu_degree_title">
+        Bachelier en informatique et systèmes
+      </h3>
+      <p class="text-sm text-muted" data-i18n="edu_degree_school">
+        Haute École de la Province de Liège, Belgique · 2003 – 2007
+      </p>
+    </div>
+
+    <!-- Langues -->
+    <div class="edu-item flex flex-col gap-2">
+      <span class="eyebrow">Langues</span>
+      <h3 class="sr-only" data-i18n="edu_langs_title">Langues</h3>
+      <ul class="mt-1 flex flex-col gap-2 text-sm text-ink-soft">
+        <li class="flex items-center gap-3">
+          <img src="/icons/flag-fr.svg" alt="" width="16" height="12" class="inline-block h-3 w-4 flex-none rounded-[2px] object-cover" loading="lazy" />
+          <span data-i18n="lang_fr">Français — Natif</span>
+        </li>
+        <li class="flex items-center gap-3">
+          <img src="/icons/flag-gb.svg" alt="" width="16" height="12" class="inline-block h-3 w-4 flex-none rounded-[2px] object-cover" loading="lazy" />
+          <span data-i18n="lang_en">Anglais — C1 courant</span>
+        </li>
+        <li class="flex items-center gap-3">
+          <img src="/icons/flag-jp.svg" alt="" width="16" height="12" class="inline-block h-3 w-4 flex-none rounded-[2px] object-cover" loading="lazy" />
+          <span data-i18n="lang_jp">日本語 — JLPT N5 certifié · N2 en préparation</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Certs obtained -->
+    <div class="edu-item flex flex-col gap-2">
+      <span class="eyebrow">Certifications obtenues</span>
+      <h3 class="sr-only" data-i18n="edu_certs_done_title">Certifications obtenues</h3>
+      <ul class="mt-1 flex flex-col gap-2">
+        {certsDone.map((c) => (
+          <li class="flex items-center gap-2 text-sm text-ink-soft">
+            <span class="grid h-4 w-4 flex-none place-items-center rounded-md bg-[color:color-mix(in_oklab,#22c55e_22%,transparent)] text-[#16a34a]" aria-hidden="true">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>{c}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Certs WIP -->
+    <div class="edu-item flex flex-col gap-2">
+      <span class="eyebrow">En cours</span>
+      <h3 class="sr-only" data-i18n="edu_certs_wip_title">En cours</h3>
+      <ul class="mt-1 flex flex-col gap-2">
+        {certsWip.map((c) => (
+          <li class="flex items-center gap-2 text-sm text-ink-soft">
+            <span class="grid h-4 w-4 flex-none place-items-center rounded-md bg-[color:color-mix(in_oklab,var(--accent)_22%,transparent)] text-accent" aria-hidden="true">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </span>
+            <span>{c}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
