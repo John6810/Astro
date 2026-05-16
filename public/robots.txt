@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://john6810.github.io/Astro/sitemap-index.xml
