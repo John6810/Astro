@@ -1,0 +1,26 @@
+# Cloudflare Pages headers — per-path overrides
+# Docs: https://developers.cloudflare.com/pages/configuration/headers/
+#
+# Most assets keep CF Pages defaults. We override Cache-Control for the agent-
+# facing text endpoints so they hit a 1h browser/edge cache (content churns
+# slowly) instead of the default short TTL.
+
+# Markdown variants (recruiter + blog + per-post slugs)
+/index.md
+  Cache-Control: public, max-age=3600
+/blog/index.md
+  Cache-Control: public, max-age=3600
+/blog/*.md
+  Cache-Control: public, max-age=3600
+
+# Agent / crawler metadata
+/llms.txt
+  Cache-Control: public, max-age=3600
+/robots.txt
+  Cache-Control: public, max-age=3600
+
+# Sitemap — refresh every hour at most
+/sitemap-index.xml
+  Cache-Control: public, max-age=3600
+/sitemap-0.xml
+  Cache-Control: public, max-age=3600
