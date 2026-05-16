@@ -6,6 +6,15 @@ import mdx from "@astrojs/mdx";
 const SITE = process.env.ASTRO_SITE || "https://john6810.github.io";
 const BASE = process.env.ASTRO_BASE || "/Astro/";
 
+// Build timestamp injected as a compile-time constant. Format: "November 16, 2025"
+// (en-US long form). Refreshed automatically on every `astro build` — i.e. every
+// deploy via GitHub Actions on push to main.
+const BUILD_DATE = new Date().toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
 export default defineConfig({
   output: "static",
   site: SITE,
@@ -28,5 +37,8 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    define: {
+      __BUILD_DATE__: JSON.stringify(BUILD_DATE),
+    },
   },
 });
