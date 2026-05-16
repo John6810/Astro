@@ -1,0 +1,272 @@
+---
+import "@fontsource-variable/geist-mono";
+import "../styles/global.css";
+
+import BaseHead from "../components/BaseHead.astro";
+import Analytics from "../components/Analytics.astro";
+import FloatingTheme from "../components/FloatingTheme.astro";
+import Footer from "../components/Footer.astro";
+import TagBadge from "../components/blog/TagBadge.astro";
+import ReadingTime from "../components/blog/ReadingTime.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  minutes: number;
+  tags: string[];
+  lang?: "fr" | "en";
+  canonicalURL?: string;
+  url: string;
+}
+
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  minutes,
+  tags,
+  lang = "fr",
+  canonicalURL,
+  url,
+} = Astro.props;
+const locale = lang === "en" ? "en-GB" : "fr-FR";
+const dateLabel = new Intl.DateTimeFormat(locale, {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+}).format(pubDate);
+const updatedLabel = updatedDate
+  ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(
+      updatedDate
+    )
+  : null;
+const finalCanonical = canonicalURL || url;
+---
+
+<!doctype html>
+<html lang={lang === "en" ? "en" : "fr"}>
+  <head>
+    <BaseHead
+      title={title + " — Jonathan Aerts"}
+      description={description}
+      canonicalURL={finalCanonical}
+    />
+    <meta name="generator" content={Astro.generator} />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' gc.zgo.at; img-src 'self' data:; font-src 'self'; connect-src 'self' *.goatcounter.com"
+    />
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var prefersDark =
+            window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var dark = stored ? stored === "dark" : prefersDark;
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="font-body text-ink">
+    <a href="#article" class="skip-to-content">Skip to content</a>
+
+    <FloatingTheme />
+
+    <div class="flex w-full justify-center px-4 py-6 sm:px-8 sm:py-12 lg:py-16">
+      <main class="flex w-full max-w-3xl flex-col gap-6">
+        <!-- Back link -->
+        <nav class="no-print">
+          <a
+            href="/blog"
+            class="text-muted hover:text-accent inline-flex items-center gap-1.5 text-sm font-medium transition"
+          >
+            <span aria-hidden="true">←</span>
+            <span>{lang === "en" ? "All posts" : "Tous les articles"}</span>
+          </a>
+        </nav>
+
+        <article id="article" class="card flex flex-col gap-5 p-8">
+          <header class="border-line flex flex-col gap-3 border-b pb-6">
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <time
+                class="text-muted font-mono text-[11px] tracking-[0.08em] uppercase"
+                datetime={pubDate.toISOString()}>{dateLabel}</time
+              >
+              <span aria-hidden="true" class="text-muted">·</span>
+              <ReadingTime minutes={minutes} lang={lang} />
+              {
+                updatedLabel && (
+                  <>
+                    <span aria-hidden="true" class="text-muted">
+                      ·
+                    </span>
+                    <span class="text-muted font-mono text-[11px] tracking-[0.06em] uppercase">
+                      {lang === "en" ? `updated ${updatedLabel}` : `mis à jour ${updatedLabel}`}
+                    </span>
+                  </>
+                )
+              }
+            </div>
+            <h1 class="text-ink text-3xl leading-tight font-extrabold tracking-tight sm:text-4xl">
+              {title}
+            </h1>
+            <p class="text-muted text-base leading-relaxed">{description}</p>
+            {
+              tags.length > 0 && (
+                <div class="mt-1 flex flex-wrap gap-1.5">
+                  {tags.map((t) => (
+                    <TagBadge tag={t} />
+                  ))}
+                </div>
+              )
+            }
+          </header>
+
+          <div class="prose">
+            <slot />
+          </div>
+        </article>
+
+        <Footer />
+      </main>
+    </div>
+
+    <Analytics />
+  </body>
+</html>
+
+<style is:global>
+  /* Prose styles for blog article content */
+  .prose {
+    color: var(--ink-soft);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+  .prose > * + * {
+    margin-top: 1.1em;
+  }
+  .prose h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-top: 2em;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .prose h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: 1.6em;
+    line-height: 1.3;
+  }
+  .prose h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: 1.4em;
+  }
+  .prose p {
+    color: var(--ink-soft);
+  }
+  .prose strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .prose em {
+    font-style: italic;
+  }
+  .prose a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition: color 0.15s;
+  }
+  .prose a:hover {
+    color: var(--accent-soft);
+  }
+  .prose ul,
+  .prose ol {
+    padding-left: 1.5em;
+  }
+  .prose ul {
+    list-style: disc;
+  }
+  .prose ol {
+    list-style: decimal;
+  }
+  .prose li {
+    margin-top: 0.3em;
+  }
+  .prose li::marker {
+    color: var(--accent);
+  }
+  .prose blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 1em;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .prose hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 2em 0;
+  }
+  .prose code:not(pre code) {
+    background: var(--bg-soft);
+    color: var(--ink);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+  .prose pre {
+    background: var(--bg-soft) !important;
+    color: var(--ink-soft);
+    padding: 1em 1.2em;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.55;
+    border: 1px solid var(--line);
+  }
+  .prose pre code {
+    background: transparent;
+    padding: 0;
+    font-family: var(--font-mono);
+  }
+  .prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+  }
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95em;
+  }
+  .prose th,
+  .prose td {
+    padding: 0.5em 0.75em;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+  }
+  .prose th {
+    color: var(--ink);
+    font-weight: 600;
+    background: var(--bg-soft);
+  }
+
+  /* Shiki dark mode swap */
+  .dark .prose pre.astro-code,
+  .dark .prose pre.astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+  }
+</style>

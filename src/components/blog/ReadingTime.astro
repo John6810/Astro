@@ -1,0 +1,11 @@
+---
+interface Props {
+  minutes: number;
+  lang?: "fr" | "en";
+}
+const { minutes, lang = "fr" } = Astro.props;
+const m = Math.max(1, Math.ceil(minutes));
+const label = lang === "en" ? `~ ${m} min read` : `~ ${m} min de lecture`;
+---
+
+<span class="text-muted font-mono text-[11px] tracking-[0.06em] uppercase">{label}</span>

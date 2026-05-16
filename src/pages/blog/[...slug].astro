@@ -1,0 +1,41 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import readingTimeFn from "reading-time";
+import BlogPostLayout from "../../layouts/BlogPostLayout.astro";
+
+type BlogPost = CollectionEntry<"blog">;
+
+interface Props {
+  post: BlogPost;
+  minutes: number;
+}
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog", ({ data }: BlogPost) => {
+    return import.meta.env.PROD ? !data.draft : true;
+  });
+  return posts.map((post: BlogPost) => ({
+    params: { slug: post.id },
+    props: { post, minutes: readingTimeFn(post.body ?? "").minutes },
+  }));
+}
+
+const { post, minutes } = Astro.props as Props;
+const { Content } = await render(post);
+
+const url = new URL(`/blog/${post.id}/`, Astro.site).toString();
+---
+
+<BlogPostLayout
+  title={post.data.title}
+  description={post.data.description}
+  pubDate={post.data.pubDate}
+  updatedDate={post.data.updatedDate}
+  minutes={minutes}
+  tags={post.data.tags}
+  lang={post.data.lang}
+  canonicalURL={post.data.canonicalURL}
+  url={url}
+>
+  <Content />
+</BlogPostLayout>

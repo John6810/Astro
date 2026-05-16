@@ -28,6 +28,7 @@ const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteOrigin}${ogIma
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />
+<link rel="alternate" type="application/rss+xml" title="Jonathan Aerts — Blog" href="/rss.xml" />
 
 <meta name="description" content={description} />
 <meta name="robots" content={noindex ? "noindex, follow" : "index, follow"} />
@@ -49,20 +50,34 @@ const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteOrigin}${ogIma
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={fullOgImage} />
 
-<script type="application/ld+json" set:html={JSON.stringify({
-  "@context": "https://schema.org",
-  "@type": "Person",
-  "name": "Jonathan Aerts",
-  "jobTitle": "Senior Cloud Platform Architect",
-  "url": "https://jonathan-aerts.dev",
-  "email": "hi@jonathan-aerts.dev",
-  "image": "https://jonathan-aerts.dev/images/avatar.jpg",
-  "sameAs": ["https://linkedin.com/in/jaerts085/"],
-  "knowsAbout": ["Azure Landing Zone", "Terraform", "Terragrunt", "Azure CAF", "Virtual WAN", "Defender for Cloud", "Sentinel", "Kubernetes", "AWS", "HashiCorp"],
-  "knowsLanguage": ["fr", "en", "ja"],
-  "worksFor": { "@type": "Organization", "name": "POST Luxembourg" },
-  "alumniOf": { "@type": "EducationalOrganization", "name": "Haute École de la Province de Liège" },
-  "address": { "@type": "PostalAddress", "addressCountry": "BE" }
-})} />
+<script
+  type="application/ld+json"
+  set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Jonathan Aerts",
+    jobTitle: "Senior Cloud Platform Architect",
+    url: "https://jonathan-aerts.dev",
+    email: "hi@jonathan-aerts.dev",
+    image: "https://jonathan-aerts.dev/images/avatar.jpg",
+    sameAs: ["https://linkedin.com/in/jaerts085/"],
+    knowsAbout: [
+      "Azure Landing Zone",
+      "Terraform",
+      "Terragrunt",
+      "Azure CAF",
+      "Virtual WAN",
+      "Defender for Cloud",
+      "Sentinel",
+      "Kubernetes",
+      "AWS",
+      "HashiCorp",
+    ],
+    knowsLanguage: ["fr", "en", "ja"],
+    worksFor: { "@type": "Organization", name: "POST Luxembourg" },
+    alumniOf: { "@type": "EducationalOrganization", name: "Haute École de la Province de Liège" },
+    address: { "@type": "PostalAddress", addressCountry: "BE" },
+  })}
+/>
 
 <title>{title}</title>

@@ -15,30 +15,30 @@
 
 /* Per-theme CSS vars; @theme inline maps them into Tailwind utilities */
 :root {
-  --bg: #ffffff;            /* pure white canvas */
-  --bg-soft: #f3f4f6;       /* gray-100 — tags, chips */
+  --bg: #ffffff; /* pure white canvas */
+  --bg-soft: #f3f4f6; /* gray-100 — tags, chips */
   --paper: #ffffff;
-  --ink: #111827;           /* gray-900 */
-  --ink-soft: #374151;      /* gray-700 */
-  --muted: #6b7280;         /* gray-500 */
-  --line: #e5e7eb;          /* gray-200 — card borders */
-  --line-soft: #f3f4f6;     /* gray-100 */
-  --accent: #6366f1;        /* indigo-500 — primary action */
+  --ink: #111827; /* gray-900 */
+  --ink-soft: #374151; /* gray-700 */
+  --muted: #6b7280; /* gray-500 */
+  --line: #e5e7eb; /* gray-200 — card borders */
+  --line-soft: #f3f4f6; /* gray-100 */
+  --accent: #6366f1; /* indigo-500 — primary action */
   --accent-soft: #a8b1ff;
   --accent-on: #ffffff;
-  --shadow-card: 0 4px 14px -6px rgb(17 24 39 / 0.10), 0 2px 4px -2px rgb(17 24 39 / 0.06);
+  --shadow-card: 0 4px 14px -6px rgb(17 24 39 / 0.1), 0 2px 4px -2px rgb(17 24 39 / 0.06);
   --shadow-lift: 0 10px 24px -10px rgb(17 24 39 / 0.18);
   color-scheme: light;
 }
 
 .dark {
-  --bg: #111827;            /* gray-900 */
-  --bg-soft: #1f2937;       /* gray-800 */
-  --paper: #1f2937;         /* gray-800 — cards */
-  --ink: #f3f4f6;           /* gray-100 */
-  --ink-soft: #d1d5db;      /* gray-300 */
-  --muted: #9ca3af;         /* gray-400 */
-  --line: #374151;          /* gray-700 */
+  --bg: #111827; /* gray-900 */
+  --bg-soft: #1f2937; /* gray-800 */
+  --paper: #1f2937; /* gray-800 — cards */
+  --ink: #f3f4f6; /* gray-100 */
+  --ink-soft: #d1d5db; /* gray-300 */
+  --muted: #9ca3af; /* gray-400 */
+  --line: #374151; /* gray-700 */
   --line-soft: #374151;
   --accent: #a8b1ff;
   --accent-soft: #c4cbff;
@@ -61,17 +61,32 @@
   --color-accent-soft: var(--accent-soft);
   --color-accent-on: var(--accent-on);
 
-  --font-body: "Inter var", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-body:
+    "Inter var", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono:
+    "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
-@utility font-body { font-family: var(--font-body); }
-@utility font-mono { font-family: var(--font-mono); }
+@utility font-body {
+  font-family: var(--font-body);
+}
+@utility font-mono {
+  font-family: var(--font-mono);
+}
 
 @layer base {
-  *, *::before, *::after { box-sizing: border-box; }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
   body {
     font-family: var(--font-body);
@@ -84,7 +99,10 @@
     overflow-x: clip;
   }
 
-  a { color: inherit; text-decoration: none; }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
   :focus-visible {
     outline: 2px solid var(--accent);
@@ -92,14 +110,17 @@
     border-radius: 6px;
   }
 
-  ::selection { background: var(--accent); color: var(--accent-on); }
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-on);
+  }
 }
 
 /* Cards à la devscard: white surface, rounded-2xl, soft border + shadow */
 .card {
   background-color: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 1rem;            /* rounded-2xl */
+  border-radius: 1rem; /* rounded-2xl */
   box-shadow: var(--shadow-card);
 }
 
@@ -169,24 +190,45 @@
 
 /* Skill segments — 5 bars per row */
 .bar {
-  height: 0.5rem;          /* h-2 */
-  width: 2.25rem;          /* w-9 */
+  height: 0.5rem; /* h-2 */
+  width: 2.25rem; /* w-9 */
   background-color: var(--line);
 }
-.bar:first-child { border-top-left-radius: 2px; border-bottom-left-radius: 2px; }
-.bar:last-child  { border-top-right-radius: 2px; border-bottom-right-radius: 2px; }
-.bar-fill { background-color: var(--ink-soft); }
-.dark .bar { background-color: var(--line); }
-.dark .bar-fill { background-color: var(--ink-soft); }
+.bar:first-child {
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+.bar:last-child {
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+.bar-fill {
+  background-color: var(--ink-soft);
+}
+.dark .bar {
+  background-color: var(--line);
+}
+.dark .bar-fill {
+  background-color: var(--ink-soft);
+}
 
 /* Skip link */
 .skip-to-content {
-  position: absolute; left: -9999px; top: 0; z-index: 999;
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999;
   padding: 8px 16px;
-  background: var(--ink); color: var(--paper);
-  font-family: var(--font-mono); font-size: 12px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
-.skip-to-content:focus { left: 16px; top: 16px; border-radius: 6px; }
+.skip-to-content:focus {
+  left: 16px;
+  top: 16px;
+  border-radius: 6px;
+}
 
 /* Print: collapse to clean A4 */
 @media print {
@@ -195,15 +237,26 @@
     color: #000 !important;
     font-size: 10.5pt;
   }
-  .no-print { display: none !important; }
-  .card, .card-soft {
+  .no-print {
+    display: none !important;
+  }
+  .card,
+  .card-soft {
     box-shadow: none !important;
     border: 1px solid #e5e7eb !important;
     background: #fff !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  .job, .hl-item, .edu-item { break-inside: avoid; }
-  a[href]::after { content: ""; }
-  @page { margin: 12mm 14mm; }
+  .job,
+  .hl-item,
+  .edu-item {
+    break-inside: avoid;
+  }
+  a[href]::after {
+    content: "";
+  }
+  @page {
+    margin: 12mm 14mm;
+  }
 }
