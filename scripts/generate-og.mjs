@@ -1,10 +1,10 @@
-import sharp from 'sharp';
-import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import sharp from "sharp";
+import { readFileSync } from "fs";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, '..');
+const root = resolve(__dirname, "..");
 
 // Render at 2x then downscale for crisp text
 const SCALE = 2;
@@ -15,21 +15,21 @@ const H = OUT_H * SCALE;
 const AVATAR_SIZE = 280 * SCALE;
 
 // Palette aligned with the site (recruiter / dark anthracite)
-const BG_COLOR = '#111827';      // ink / gray-900
-const ACCENT = '#a8b1ff';        // lavender (accent-soft, readable on dark)
-const TEXT_PRIMARY = '#fafafa';
-const TEXT_SECONDARY = '#9ca3af'; // muted gray
-const TEXT_TERTIARY = '#6b7280';
+const BG_COLOR = "#111827"; // ink / gray-900
+const ACCENT = "#a8b1ff"; // lavender (accent-soft, readable on dark)
+const TEXT_PRIMARY = "#fafafa";
+const TEXT_SECONDARY = "#9ca3af"; // muted gray
+const TEXT_TERTIARY = "#6b7280";
 
-const NAME = 'Jonathan Aerts';
-const TITLE = 'Senior Cloud Platform Architect';
-const SUBTITLE = 'Azure Landing Zone · Terraform · GitOps · Platform Engineering';
-const URL = 'jonathan-aerts.dev/recruiter';
+const NAME = "Jonathan Aerts";
+const TITLE = "Senior Cloud Platform Architect";
+const SUBTITLE = "Azure Landing Zone · Terraform · GitOps · Platform Engineering";
+const URL = "jonathan-aerts.dev/recruiter";
 
 async function generate() {
-  const avatarBuffer = readFileSync(resolve(root, 'public/images/avatar.jpg'));
+  const avatarBuffer = readFileSync(resolve(root, "public/images/avatar.jpg"));
   const avatar = await sharp(avatarBuffer)
-    .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: 'cover' })
+    .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: "cover" })
     .toBuffer();
 
   const circleMask = Buffer.from(
@@ -39,7 +39,7 @@ async function generate() {
   );
 
   const circularAvatar = await sharp(avatar)
-    .composite([{ input: circleMask, blend: 'dest-in' }])
+    .composite([{ input: circleMask, blend: "dest-in" }])
     .png()
     .toBuffer();
 
@@ -91,11 +91,11 @@ async function generate() {
     .toBuffer();
 
   await sharp(composed)
-    .resize(OUT_W, OUT_H, { kernel: 'lanczos3' })
+    .resize(OUT_W, OUT_H, { kernel: "lanczos3" })
     .png()
-    .toFile(resolve(root, 'public/images/og-preview.png'));
+    .toFile(resolve(root, "public/images/og-preview.png"));
 
-  console.log('Generated: public/images/og-preview.png (1200x627) — 2x supersampled');
+  console.log("Generated: public/images/og-preview.png (1200x627) — 2x supersampled");
 }
 
 generate().catch((err) => {

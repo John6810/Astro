@@ -1,25 +1,30 @@
 ---
 const stats = [
-  { num: '15+',     label: "ans d'IT" },
-  { num: '5+',      label: 'ans sur Azure' },
-  { num: '60+',     label: 'modules Terraform' },
-  { num: '+500K€',  label: 'budget annuel' },
-  { num: '35+',     label: 'ingénieurs formés' },
-  { num: '4',       label: 'Landing Zones' },
+  { num: "15+", labelKey: "stat_years_label", label: "ans d'IT" },
+  { num: "5+", labelKey: "stat_azure_label", label: "ans sur Azure" },
+  { num: "60+", labelKey: "stat_modules_label", label: "modules Terraform" },
+  { num: "+500K€", labelKey: "stat_budget_label", label: "budget annuel" },
+  { num: "35+", labelKey: "stat_trained_label", label: "ingénieurs formés" },
+  { num: "4", labelKey: "stat_alz_label", label: "Landing Zones" },
 ];
 ---
 
 <section aria-label="Key figures" class="card overflow-hidden">
-  <div class="grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-6">
-    {stats.map((s) => (
-      <div class="flex min-h-[110px] flex-col items-center justify-center bg-paper p-5 text-center">
-        <div class="whitespace-nowrap text-3xl font-extrabold leading-none tracking-tight text-accent">
-          {s.num}
+  <div class="bg-line grid grid-cols-2 gap-px sm:grid-cols-3 lg:grid-cols-6">
+    {
+      stats.map((s) => (
+        <div class="bg-paper flex min-h-[110px] flex-col items-center justify-center p-5 text-center">
+          <div class="text-accent text-3xl leading-none font-extrabold tracking-tight whitespace-nowrap">
+            {s.num}
+          </div>
+          <div
+            class="text-muted mt-2 text-[13px] leading-snug whitespace-nowrap"
+            data-i18n={s.labelKey}
+          >
+            {s.label}
+          </div>
         </div>
-        <div class="mt-2 whitespace-nowrap text-[13px] leading-snug text-muted">
-          {s.label}
-        </div>
-      </div>
-    ))}
+      ))
+    }
   </div>
 </section>

@@ -1,142 +1,253 @@
 ---
-type IconRef =
-  | { kind: 'img'; src: string }
-  | { kind: 'mono'; mono: string; bg: string };
+type IconRef = { kind: "img"; src: string } | { kind: "mono"; mono: string; bg: string };
 
-type Level = 'EXPERT' | 'AVANCÉ';
+type Level = "EXPERT" | "AVANCÉ";
 type Skill = { name: string; icon: IconRef; level: Level };
-type Category = { emoji: string; title: string; skills: Skill[] };
+type Category = { emoji: string; title: string; titleKey: string; skills: Skill[] };
 
 const categories: Category[] = [
   {
-    emoji: '☁️',
-    title: 'Cloud & Architecture',
+    emoji: "☁️",
+    title: "Cloud & Architecture",
+    titleKey: "cat_cloud",
     skills: [
-      { name: 'Azure Landing Zone',                   icon: { kind: 'img',  src: '/icons/azure-mg.svg' },   level: 'EXPERT' },
-      { name: 'Microsoft CAF / Azure Verified Modules', icon: { kind: 'img', src: '/icons/azure-mg.svg' }, level: 'AVANCÉ' },
-      { name: 'AKS / Kubernetes',                     icon: { kind: 'img',  src: '/icons/kubernetes.svg' }, level: 'AVANCÉ' },
+      {
+        name: "Azure Landing Zone",
+        icon: { kind: "img", src: "/icons/azure-mg.svg" },
+        level: "EXPERT",
+      },
+      {
+        name: "Microsoft CAF / Azure Verified Modules",
+        icon: { kind: "img", src: "/icons/azure-mg.svg" },
+        level: "AVANCÉ",
+      },
+      {
+        name: "AKS / Kubernetes",
+        icon: { kind: "img", src: "/icons/kubernetes.svg" },
+        level: "AVANCÉ",
+      },
     ],
   },
   {
-    emoji: '🔧',
-    title: 'IaC & GitOps',
+    emoji: "🔧",
+    title: "IaC & GitOps",
+    titleKey: "cat_iac",
     skills: [
-      { name: 'Terraform',                       icon: { kind: 'img',  src: '/icons/terraform.svg' },    level: 'EXPERT' },
-      { name: 'Terragrunt',                      icon: { kind: 'img',  src: '/icons/terragrunt.webp' },  level: 'AVANCÉ' },
-      { name: 'Argo CD / GitOps',                icon: { kind: 'img',  src: '/icons/argocd.svg' },       level: 'AVANCÉ' },
-      { name: 'Azure DevOps / GitHub Actions',   icon: { kind: 'img',  src: '/icons/azuredevops.svg' },  level: 'AVANCÉ' },
+      { name: "Terraform", icon: { kind: "img", src: "/icons/terraform.svg" }, level: "EXPERT" },
+      { name: "Terragrunt", icon: { kind: "img", src: "/icons/terragrunt.webp" }, level: "AVANCÉ" },
+      {
+        name: "Argo CD / GitOps",
+        icon: { kind: "img", src: "/icons/argocd.svg" },
+        level: "AVANCÉ",
+      },
+      {
+        name: "Azure DevOps / GitHub Actions",
+        icon: { kind: "img", src: "/icons/azuredevops.svg" },
+        level: "AVANCÉ",
+      },
     ],
   },
   {
-    emoji: '🌐',
-    title: 'Networking & Security',
+    emoji: "🌐",
+    title: "Networking & Security",
+    titleKey: "cat_network",
     skills: [
-      { name: 'Hub-Spoke / Virtual WAN / ExpressRoute', icon: { kind: 'img', src: '/icons/vwan.svg' },     level: 'EXPERT' },
-      { name: 'Palo Alto VM-Series',                    icon: { kind: 'img', src: '/icons/paloalto.svg' }, level: 'AVANCÉ' },
-      { name: 'Defender for Cloud / Sentinel',          icon: { kind: 'img', src: '/icons/defender.svg' }, level: 'AVANCÉ' },
+      {
+        name: "Hub-Spoke / Virtual WAN / ExpressRoute",
+        icon: { kind: "img", src: "/icons/vwan.svg" },
+        level: "EXPERT",
+      },
+      {
+        name: "Palo Alto VM-Series",
+        icon: { kind: "img", src: "/icons/paloalto.svg" },
+        level: "AVANCÉ",
+      },
+      {
+        name: "Defender for Cloud / Sentinel",
+        icon: { kind: "img", src: "/icons/defender.svg" },
+        level: "AVANCÉ",
+      },
     ],
   },
   {
-    emoji: '🔐',
-    title: 'Identity & Governance',
+    emoji: "🔐",
+    title: "Identity & Governance",
+    titleKey: "cat_identity",
     skills: [
-      { name: 'Entra ID / Conditional Access / PIM', icon: { kind: 'img', src: '/icons/ca.svg' },       level: 'EXPERT' },
-      { name: 'Azure Policy / RBAC',                 icon: { kind: 'img', src: '/icons/policy.svg' },   level: 'EXPERT' },
-      { name: 'Key Vault / Workload Identity',       icon: { kind: 'img', src: '/icons/keyvault.svg' }, level: 'AVANCÉ' },
+      {
+        name: "Entra ID / Conditional Access / PIM",
+        icon: { kind: "img", src: "/icons/ca.svg" },
+        level: "EXPERT",
+      },
+      {
+        name: "Azure Policy / RBAC",
+        icon: { kind: "img", src: "/icons/policy.svg" },
+        level: "EXPERT",
+      },
+      {
+        name: "Key Vault / Workload Identity",
+        icon: { kind: "img", src: "/icons/keyvault.svg" },
+        level: "AVANCÉ",
+      },
     ],
   },
   {
-    emoji: '📊',
-    title: 'Observability & Adjacent',
+    emoji: "📊",
+    title: "Observability & Adjacent",
+    titleKey: "cat_observ",
     skills: [
-      { name: 'Azure Monitor / Managed Prometheus / Grafana', icon: { kind: 'img',  src: '/icons/monitor.svg' }, level: 'AVANCÉ' },
-      { name: 'Microsoft 365 / Exchange Online / Intune',     icon: { kind: 'img',  src: '/icons/intune.svg' }, level: 'AVANCÉ' },
-      { name: 'VMware vSphere · Cisco / Meraki SD-WAN',       icon: { kind: 'img',  src: '/icons/vmware.svg' }, level: 'AVANCÉ' },
+      {
+        name: "Azure Monitor / Managed Prometheus / Grafana",
+        icon: { kind: "img", src: "/icons/monitor.svg" },
+        level: "AVANCÉ",
+      },
+      {
+        name: "Microsoft 365 / Exchange Online / Intune",
+        icon: { kind: "img", src: "/icons/intune.svg" },
+        level: "AVANCÉ",
+      },
+      {
+        name: "VMware vSphere · Cisco / Meraki SD-WAN",
+        icon: { kind: "img", src: "/icons/vmware.svg" },
+        level: "AVANCÉ",
+      },
     ],
   },
 ];
 
 const levelClass: Record<Level, string> = {
-  EXPERT: 'text-accent',
-  AVANCÉ: 'text-ink-soft',
+  EXPERT: "text-accent",
+  AVANCÉ: "text-ink-soft",
+};
+const levelKey: Record<Level, string> = {
+  EXPERT: "level_expert",
+  AVANCÉ: "level_avance",
 };
 
 type LearnItem = { name: string; icon: IconRef };
 const learning: LearnItem[] = [
-  { name: 'AWS Landing Zone · Control Tower · SCPs', icon: { kind: 'img', src: '/icons/aws.svg' } },
+  { name: "AWS Landing Zone · Control Tower · SCPs", icon: { kind: "img", src: "/icons/aws.svg" } },
 ];
 
 const languages = [
-  { src: '/icons/flag-fr.svg', label: 'Français — Natif' },
-  { src: '/icons/flag-gb.svg', label: 'English — C1' },
-  { src: '/icons/flag-jp.svg', label: '日本語 — JLPT N5' },
+  { src: "/icons/flag-fr.svg", label: "Français — Natif", key: "lang_fr" },
+  { src: "/icons/flag-gb.svg", label: "Anglais — C1 courant", key: "lang_en" },
+  {
+    src: "/icons/flag-jp.svg",
+    label: "日本語 — JLPT N5 certifié · N2 en préparation",
+    key: "lang_jp",
+  },
 ];
 ---
 
 <section id="skills" class="card p-8">
-  <h2 class="h-section">Skills</h2>
+  <h2 class="h-section" data-i18n="section_skills">Skills</h2>
 
   <div class="mt-8 flex flex-col gap-10">
     <!-- Je maîtrise -->
     <div>
-      <h3 class="mb-6 text-base font-extrabold text-ink">Je maîtrise</h3>
+      <h3 class="text-ink mb-6 text-base font-extrabold" data-i18n="skills_mastering">
+        Je maîtrise
+      </h3>
 
       <div class="flex flex-col gap-7">
-        {categories.map((cat) => (
-          <div>
-            <h4 class="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-soft">
-              <span aria-hidden="true">{cat.emoji}</span>
-              <span>{cat.title}</span>
-            </h4>
-            <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-              {cat.skills.map((s) => (
-                <div class="flex flex-col gap-1">
-                  <div class="flex items-center gap-2">
-                    {s.icon.kind === 'img' && (
-                      <img src={s.icon.src} alt="" width="20" height="20" class="h-5 w-5 flex-none object-contain" loading="lazy" />
-                    )}
-                    {s.icon.kind === 'mono' && (
-                      <span class="grid h-5 w-5 flex-none place-items-center rounded text-[9px] font-bold text-white" style={`background: ${s.icon.bg}`}>{s.icon.mono}</span>
-                    )}
-                    <span class="text-sm font-medium leading-tight text-ink">{s.name}</span>
+        {
+          categories.map((cat) => (
+            <div>
+              <h4 class="text-ink-soft mb-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] uppercase">
+                <span aria-hidden="true">{cat.emoji}</span>
+                <span data-i18n={cat.titleKey}>{cat.title}</span>
+              </h4>
+              <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                {cat.skills.map((s) => (
+                  <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2">
+                      {s.icon.kind === "img" && (
+                        <img
+                          src={s.icon.src}
+                          alt=""
+                          width="20"
+                          height="20"
+                          class="h-5 w-5 flex-none object-contain"
+                          loading="lazy"
+                        />
+                      )}
+                      {s.icon.kind === "mono" && (
+                        <span
+                          class="grid h-5 w-5 flex-none place-items-center rounded text-[9px] font-bold text-white"
+                          style={`background: ${s.icon.bg}`}
+                        >
+                          {s.icon.mono}
+                        </span>
+                      )}
+                      <span class="text-ink text-sm leading-tight font-medium">{s.name}</span>
+                    </div>
+                    <span
+                      class={`pl-7 font-mono text-[10px] tracking-[0.1em] uppercase ${levelClass[s.level]}`}
+                      data-i18n={levelKey[s.level]}
+                    >
+                      {s.level}
+                    </span>
                   </div>
-                  <span class={`pl-7 font-mono text-[10px] uppercase tracking-[0.1em] ${levelClass[s.level]}`}>{s.level}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
     </div>
 
     <!-- J'apprends -->
     <div>
-      <h3 class="mb-4 text-base font-extrabold text-ink">J'apprends</h3>
+      <h3 class="text-ink mb-4 text-base font-extrabold" data-i18n="skills_learning">J'apprends</h3>
       <div class="flex flex-wrap gap-2">
-        {learning.map((s) => (
-          <span class="inline-flex items-center gap-2 rounded border border-line bg-paper px-2.5 py-1 text-sm font-medium text-ink">
-            {s.icon.kind === 'img' && (
-              <img src={s.icon.src} alt="" width="16" height="16" class="h-4 w-4 flex-none object-contain" loading="lazy" />
-            )}
-            {s.icon.kind === 'mono' && (
-              <span class="grid h-4 w-4 flex-none place-items-center rounded-sm text-[8px] font-bold text-white" style={`background: ${s.icon.bg}`}>{s.icon.mono}</span>
-            )}
-            {s.name}
-          </span>
-        ))}
+        {
+          learning.map((s) => (
+            <span class="border-line bg-paper text-ink inline-flex items-center gap-2 rounded border px-2.5 py-1 text-sm font-medium">
+              {s.icon.kind === "img" && (
+                <img
+                  src={s.icon.src}
+                  alt=""
+                  width="16"
+                  height="16"
+                  class="h-4 w-4 flex-none object-contain"
+                  loading="lazy"
+                />
+              )}
+              {s.icon.kind === "mono" && (
+                <span
+                  class="grid h-4 w-4 flex-none place-items-center rounded-sm text-[8px] font-bold text-white"
+                  style={`background: ${s.icon.bg}`}
+                >
+                  {s.icon.mono}
+                </span>
+              )}
+              {s.name}
+            </span>
+          ))
+        }
       </div>
     </div>
 
     <!-- Je parle -->
     <div>
-      <h3 class="mb-4 text-base font-extrabold text-ink">Je parle</h3>
+      <h3 class="text-ink mb-4 text-base font-extrabold" data-i18n="skills_speak">Je parle</h3>
       <div class="flex flex-wrap gap-2">
-        {languages.map((l) => (
-          <span class="inline-flex items-center gap-2 rounded border border-line bg-paper px-2.5 py-1 text-sm font-medium text-ink">
-            <img src={l.src} alt="" width="16" height="12" class="h-3 w-4 flex-none rounded-[2px] object-cover" loading="lazy" />
-            {l.label}
-          </span>
-        ))}
+        {
+          languages.map((l) => (
+            <span class="border-line bg-paper text-ink inline-flex items-center gap-2 rounded border px-2.5 py-1 text-sm font-medium">
+              <img
+                src={l.src}
+                alt=""
+                width="16"
+                height="12"
+                class="h-3 w-4 flex-none rounded-[2px] object-cover"
+                loading="lazy"
+              />
+              <span data-i18n={l.key}>{l.label}</span>
+            </span>
+          ))
+        }
       </div>
     </div>
   </div>
