@@ -1,4 +1,6 @@
 ---
+import { withBase } from "../lib/url";
+
 type IconRef = { kind: "img"; src: string } | { kind: "mono"; mono: string; bg: string };
 
 type Level = "EXPERT" | "AVANCÉ";
@@ -164,7 +166,7 @@ const languages = [
                     <div class="flex items-center gap-2">
                       {s.icon.kind === "img" && (
                         <img
-                          src={s.icon.src}
+                          src={withBase(s.icon.src)}
                           alt=""
                           width="20"
                           height="20"
@@ -206,7 +208,7 @@ const languages = [
             <span class="border-line bg-paper text-ink inline-flex items-center gap-2 rounded border px-2.5 py-1 text-sm font-medium">
               {s.icon.kind === "img" && (
                 <img
-                  src={s.icon.src}
+                  src={withBase(s.icon.src)}
                   alt=""
                   width="16"
                   height="16"
@@ -237,7 +239,7 @@ const languages = [
           languages.map((l) => (
             <span class="border-line bg-paper text-ink inline-flex items-center gap-2 rounded border px-2.5 py-1 text-sm font-medium">
               <img
-                src={l.src}
+                src={withBase(l.src)}
                 alt=""
                 width="16"
                 height="12"
