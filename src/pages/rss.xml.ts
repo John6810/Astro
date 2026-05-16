@@ -14,7 +14,8 @@ export async function GET(context: APIContext) {
     title: "Jonathan Aerts — Blog",
     description:
       "Senior Cloud Platform Architect — notes Azure / Terraform / AKS / plateformes cloud sous régulation.",
-    site: context.site ?? "https://john6810.github.io",
+    // `site` is guaranteed by astro.config.mjs — if missing, fail loudly.
+    site: context.site!,
     items: posts.map((p: BlogPost) => ({
       title: p.data.title,
       description: p.data.description,

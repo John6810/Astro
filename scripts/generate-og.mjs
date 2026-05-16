@@ -24,7 +24,16 @@ const TEXT_TERTIARY = "#6b7280";
 const NAME = "Jonathan Aerts";
 const TITLE = "Senior Cloud Platform Architect";
 const SUBTITLE = "Azure Landing Zone · Terraform · GitOps · Platform Engineering";
-const URL = "john6810.github.io/Astro/recruiter";
+
+// Cosmetic URL label rendered on the OG image. Override with OG_URL env var
+// when the deploy target changes — e.g. OG_URL=jonathan-aerts.dev/recruiter.
+// Default derives from ASTRO_SITE + ASTRO_BASE to stay consistent with the build.
+const URL = (() => {
+  if (process.env.OG_URL) return process.env.OG_URL;
+  const site = (process.env.ASTRO_SITE || "https://john6810.github.io").replace(/^https?:\/\//, "");
+  const base = (process.env.ASTRO_BASE || "/Astro/").replace(/^\/+|\/+$/g, "");
+  return [site, base, "recruiter"].filter(Boolean).join("/");
+})();
 
 async function generate() {
   const avatarBuffer = readFileSync(resolve(root, "public/images/avatar.jpg"));
