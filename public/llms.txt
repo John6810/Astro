@@ -13,6 +13,12 @@
 - /blog/ : technical notes — Azure Landing Zone, Terraform/Terragrunt, AKS, regulated cloud
 - /rss.xml : Atom/RSS feed for the blog
 
+## Markdown versions (for agents)
+- /index.md : recruiter summary in markdown
+- /blog/index.md : blog index in markdown
+- /blog/<slug>.md : individual articles in markdown
+- All markdown routes are served with Content-Type: text/markdown; charset=utf-8
+
 ## Core expertise
 - Azure Landing Zone (Enterprise-Scale, Microsoft CAF, Azure Verified Modules)
 - Infrastructure as Code: Terraform, Terragrunt (60+ production-ready modules, open source library)
