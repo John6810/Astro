@@ -39,10 +39,10 @@ export const T: TranslationMap = {
     // Stats
     stat_years_label: "ans d’IT",
     stat_azure_label: "ans sur Azure",
-    stat_modules_label: "modules Terraform",
-    stat_budget_label: "budget annuel",
+    stat_alz_label: "Landing Zones from scratch",
+    stat_subscriptions_label: "souscriptions Azure gouvernées",
+    stat_budget_label: "budget piloté",
     stat_trained_label: "ingénieurs formés",
-    stat_alz_label: "Landing Zones",
 
     // Sections
     section_experience: "Expérience professionnelle",
@@ -248,10 +248,10 @@ export const T: TranslationMap = {
     // Stats
     stat_years_label: "years in IT",
     stat_azure_label: "years on Azure",
-    stat_modules_label: "Terraform modules",
-    stat_budget_label: "annual budget",
+    stat_alz_label: "Landing Zones from scratch",
+    stat_subscriptions_label: "Azure subscriptions governed",
+    stat_budget_label: "budget managed",
     stat_trained_label: "engineers trained",
-    stat_alz_label: "Landing Zones",
 
     // Sections
     section_experience: "Professional experience",
@@ -456,10 +456,10 @@ export const T: TranslationMap = {
     // Stats
     stat_years_label: "年のIT経験",
     stat_azure_label: "年のAzure経験",
-    stat_modules_label: "Terraformモジュール",
-    stat_budget_label: "年間予算",
+    stat_alz_label: "Landing Zones（ゼロから構築）",
+    stat_subscriptions_label: "管理対象 Azure サブスクリプション",
+    stat_budget_label: "管理予算",
     stat_trained_label: "名のエンジニア育成",
-    stat_alz_label: "Landing Zones",
 
     // Sections
     section_experience: "職務経歴",
