@@ -4,3 +4,6 @@
 // TS 6.0 + bundler module resolution requires this shim.
 declare module "@fontsource-variable/*";
 declare module "@fontsource/*";
+
+// Compile-time constants injected via vite.define in astro.config.mjs.
+declare const __BUILD_DATE__: string;

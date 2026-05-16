@@ -39,10 +39,10 @@ export const T: TranslationMap = {
     // Stats
     stat_years_label: "ans d’IT",
     stat_azure_label: "ans sur Azure",
-    stat_modules_label: "modules Terraform",
-    stat_budget_label: "budget annuel",
+    stat_alz_label: "Landing Zones from scratch",
+    stat_subscriptions_label: "souscriptions Azure gouvernées",
+    stat_budget_label: "budget piloté",
     stat_trained_label: "ingénieurs formés",
-    stat_alz_label: "Landing Zones",
 
     // Sections
     section_experience: "Expérience professionnelle",
@@ -194,10 +194,10 @@ export const T: TranslationMap = {
     proj1_desc:
       "Bibliothèque open source de modules Terraform Azure que je maintiens — networking, AKS, Key Vault, RBAC, Private Endpoints, FinOps Hub, Palo Alto HA, et plus. Patterns AVM (validation, lookup, locks), telemetry, diagnostic settings et naming conventions par défaut.",
     proj1_link: "📦 github.com/John6810/terraform-azurerm-modules →",
-    proj2_title: "Stock Screener",
-    proj2_tagline: "Screening quantitatif · K8s / ArgoCD · 359 tests",
+    proj2_title: "Distributed Scoring Platform",
+    proj2_tagline: "Event-driven architecture · K8s / ArgoCD · 359 tests",
     proj2_desc:
-      "Plateforme personnelle de screening quantitatif et gestion d’ordres pour swing trading sur Interactive Brokers. Architecture multi-couches : CLI (19 commandes), REST API FastAPI (19 endpoints), CronJobs K8s pour le scan automatique, bot Discord companion. Scoring technique + fondamental, risk management automatisé (heat portfolio, exposition sectorielle, earnings blackout), journal et performance tracking. Déployée en GitOps via ArgoCD sur le cluster homelab.",
+      "Plateforme distribuée de scoring multi-critères déployée en GitOps sur cluster Kubernetes personnel. Architecture multi-couches : CLI (19 commandes), REST API FastAPI (19 endpoints), CronJobs Kubernetes pour les pipelines de scan automatique, bot Discord companion pour les notifications. Logique métier modulaire, validation par 359 tests pytest, déploiement GitOps via ArgoCD. Use case d’application : analyse quantitative sur données financières publiques.",
     proj3_title: "Homelab Kubernetes",
     proj3_tagline: "Cluster bare-metal · GitOps end-to-end",
     proj3_desc:
@@ -248,10 +248,10 @@ export const T: TranslationMap = {
     // Stats
     stat_years_label: "years in IT",
     stat_azure_label: "years on Azure",
-    stat_modules_label: "Terraform modules",
-    stat_budget_label: "annual budget",
+    stat_alz_label: "Landing Zones from scratch",
+    stat_subscriptions_label: "Azure subscriptions governed",
+    stat_budget_label: "budget managed",
     stat_trained_label: "engineers trained",
-    stat_alz_label: "Landing Zones",
 
     // Sections
     section_experience: "Professional experience",
@@ -403,10 +403,10 @@ export const T: TranslationMap = {
     proj1_desc:
       "Open source library of Azure Terraform modules I maintain — networking, AKS, Key Vault, RBAC, Private Endpoints, FinOps Hub, Palo Alto HA, and more. AVM patterns (validation, lookup, locks), telemetry, diagnostic settings and naming conventions by default.",
     proj1_link: "📦 github.com/John6810/terraform-azurerm-modules →",
-    proj2_title: "Stock Screener",
-    proj2_tagline: "Quant screening · K8s / ArgoCD · 359 tests",
+    proj2_title: "Distributed Scoring Platform",
+    proj2_tagline: "Event-driven architecture · K8s / ArgoCD · 359 tests",
     proj2_desc:
-      "Personal platform for quantitative screening and order management for swing trading on Interactive Brokers. Multi-layer architecture: CLI (19 commands), FastAPI REST (19 endpoints), K8s CronJobs for automated scans, companion Discord bot. Technical + fundamental scoring, automated risk management (portfolio heat, sector exposure, earnings blackout), journal and performance tracking. Deployed in GitOps via ArgoCD on the homelab cluster.",
+      "Distributed multi-criteria scoring platform deployed in GitOps on a personal Kubernetes cluster. Multi-layer architecture: CLI (19 commands), FastAPI REST API (19 endpoints), Kubernetes CronJobs for automated scan pipelines, Discord companion bot for notifications. Modular business logic, validated by 359 pytest tests, GitOps deployment via Argo CD. Application use case: quantitative analysis on public financial data.",
     proj3_title: "Homelab Kubernetes",
     proj3_tagline: "Bare-metal cluster · GitOps end-to-end",
     proj3_desc:
@@ -456,10 +456,10 @@ export const T: TranslationMap = {
     // Stats
     stat_years_label: "年のIT経験",
     stat_azure_label: "年のAzure経験",
-    stat_modules_label: "Terraformモジュール",
-    stat_budget_label: "年間予算",
+    stat_alz_label: "Landing Zones（ゼロから構築）",
+    stat_subscriptions_label: "管理対象 Azure サブスクリプション",
+    stat_budget_label: "管理予算",
     stat_trained_label: "名のエンジニア育成",
-    stat_alz_label: "Landing Zones",
 
     // Sections
     section_experience: "職務経歴",
@@ -611,10 +611,10 @@ export const T: TranslationMap = {
     proj1_desc:
       "私がメンテナンスしているAzure Terraformモジュールのオープンソースライブラリ — ネットワーキング、AKS、Key Vault、RBAC、Private Endpoints、FinOps Hub、Palo Alto HA など。AVMパターン（バリデーション、lookup、ロック）、テレメトリ、診断設定、命名規約をデフォルトで実装。",
     proj1_link: "📦 github.com/John6810/terraform-azurerm-modules →",
-    proj2_title: "Stock Screener",
-    proj2_tagline: "定量スクリーニング · K8s / ArgoCD · 359 テスト",
+    proj2_title: "分散スコアリングプラットフォーム",
+    proj2_tagline: "イベント駆動アーキテクチャ · K8s / ArgoCD · 359 テスト",
     proj2_desc:
-      "Interactive Brokers向けのスイングトレードのための、定量スクリーニングと注文管理を行う個人プラットフォーム。多層アーキテクチャ：CLI（19コマンド）、FastAPI REST（19エンドポイント）、自動スキャン用のK8s CronJob、コンパニオンDiscordボット。テクニカル + ファンダメンタルのスコアリング、自動リスク管理（ポートフォリオヒート、セクター露出、決算ブラックアウト）、ジャーナルとパフォーマンス追跡。homelabクラスターにArgoCDによるGitOpsで展開。",
+      "個人のKubernetesクラスター上にGitOpsでデプロイされた、分散型の多基準スコアリングプラットフォーム。多層アーキテクチャ：CLI（19コマンド）、FastAPI REST API（19エンドポイント）、自動スキャンパイプライン用のKubernetes CronJob、通知用のDiscordコンパニオンボット。モジュール化されたビジネスロジック、359個のpytestテストによる検証、Argo CDによるGitOpsデプロイ。応用ユースケース：公開金融データに対する定量分析。",
     proj3_title: "ホームラボ Kubernetes",
     proj3_tagline: "ベアメタルクラスター · GitOps エンドツーエンド",
     proj3_desc:
