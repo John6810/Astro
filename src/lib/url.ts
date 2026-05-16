@@ -6,8 +6,9 @@
  * starts with `/` so the site works under a subpath (e.g. GitHub Pages).
  *
  * Examples (with base = "/Astro/"):
- *   withBase("/recruiter")            -> "/Astro/recruiter"
- *   withBase("/images/avatar.jpg")    -> "/Astro/images/avatar.jpg"
+ *   withBase("/")                     -> "/"           (base="/")
+ *   withBase("/blog")                 -> "/Astro/blog" (base="/Astro/")
+ *   withBase("/images/avatar.jpg")    -> "/images/avatar.jpg"
  *   withBase("https://example.com")   -> "https://example.com" (untouched)
  *   withBase("#anchor")               -> "#anchor"             (untouched)
  */

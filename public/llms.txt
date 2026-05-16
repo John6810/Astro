@@ -9,9 +9,9 @@
 - Engagement: selectively exploring next IC role — Belgium / Luxembourg / EU remote only, no management roles, no body-shop contracting
 
 ## Key pages
-- /recruiter/ : recruiter-oriented summary (experience, skills, certifications, contact)
-- /technical/ : technical deep-dives, architecture decisions, open source modules
-- /curious/ : background, languages, personal projects
+- / : recruiter-oriented summary (experience, skills, certifications, contact)
+- /blog/ : technical notes — Azure Landing Zone, Terraform/Terragrunt, AKS, regulated cloud
+- /rss.xml : Atom/RSS feed for the blog
 
 ## Core expertise
 - Azure Landing Zone (Enterprise-Scale, Microsoft CAF, Azure Verified Modules)
