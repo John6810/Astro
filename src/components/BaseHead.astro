@@ -1,4 +1,6 @@
 ---
+import { withBase } from "../lib/url";
+
 interface Props {
   title: string;
   description?: string;
@@ -11,32 +13,51 @@ const {
   title,
   description = "Senior Cloud Platform Architect with 15+ years IT experience. Specialized in Azure Landing Zones, Terraform/GitOps, multi-region governance, and enterprise-scale cloud platforms.",
   ogImage = "/images/og-preview.png",
-  canonicalURL = "https://jonathan-aerts.dev",
+  canonicalURL,
   themeColor = "#f5f1ea",
   noindex = false,
 } = Astro.props;
 
-const siteOrigin = "https://jonathan-aerts.dev";
-const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteOrigin}${ogImage}`;
+// Build canonical from Astro.site + current pathname when not explicitly provided.
+const computedCanonical =
+  canonicalURL ??
+  (Astro.site ? new URL(Astro.url.pathname, Astro.site).toString() : Astro.url.pathname);
+
+const siteOrigin = Astro.site ? Astro.site.toString().replace(/\/+$/, "") : "";
+const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteOrigin}${withBase(ogImage)}`;
+
+// Inline @font-face needs the resolved URL at build time
+const interFontUrl = withBase("/fonts/Inter-roman.var.woff2");
+
+// Person JSON-LD — site-level identity, points at canonical site root
+const personUrl = siteOrigin
+  ? `${siteOrigin}${import.meta.env.BASE_URL.replace(/\/+$/, "")}/`
+  : "/";
+const personImage = `${siteOrigin}${withBase("/images/avatar.jpg")}`;
 ---
 
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content={themeColor} />
 
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-<link rel="manifest" href="/site.webmanifest" />
-<link rel="alternate" type="application/rss+xml" title="Jonathan Aerts — Blog" href="/rss.xml" />
+<link rel="icon" type="image/png" sizes="32x32" href={withBase("/favicon-32x32.png")} />
+<link rel="icon" type="image/png" sizes="16x16" href={withBase("/favicon-16x16.png")} />
+<link rel="apple-touch-icon" sizes="180x180" href={withBase("/apple-touch-icon.png")} />
+<link rel="manifest" href={withBase("/site.webmanifest")} />
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  title="Jonathan Aerts — Blog"
+  href={withBase("/rss.xml")}
+/>
 
 <meta name="description" content={description} />
 <meta name="robots" content={noindex ? "noindex, follow" : "index, follow"} />
-<link rel="canonical" href={canonicalURL} />
+<link rel="canonical" href={computedCanonical} />
 <meta name="author" content="Jonathan Aerts" />
 
 <meta property="og:type" content="profile" />
-<meta property="og:url" content={canonicalURL} />
+<meta property="og:url" content={computedCanonical} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={fullOgImage} />
@@ -57,9 +78,9 @@ const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteOrigin}${ogIma
     "@type": "Person",
     name: "Jonathan Aerts",
     jobTitle: "Senior Cloud Platform Architect",
-    url: "https://jonathan-aerts.dev",
+    url: personUrl,
     email: "hi@jonathan-aerts.dev",
-    image: "https://jonathan-aerts.dev/images/avatar.jpg",
+    image: personImage,
     sameAs: ["https://linkedin.com/in/jaerts085/"],
     knowsAbout: [
       "Azure Landing Zone",
@@ -81,3 +102,14 @@ const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteOrigin}${ogIma
 />
 
 <title>{title}</title>
+
+<!-- Inter v3 self-hosted: define @font-face here so the URL respects `base` -->
+<style is:global define:vars={{ interFontUrl: `url("${interFontUrl}")` }}>
+  @font-face {
+    font-family: "Inter var";
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: var(--interFontUrl) format("woff2");
+  }
+</style>

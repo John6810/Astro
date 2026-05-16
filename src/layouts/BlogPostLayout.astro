@@ -8,6 +8,7 @@ import FloatingTheme from "../components/FloatingTheme.astro";
 import Footer from "../components/Footer.astro";
 import TagBadge from "../components/blog/TagBadge.astro";
 import ReadingTime from "../components/blog/ReadingTime.astro";
+import { withBase } from "../lib/url";
 
 interface Props {
   title: string;
@@ -81,7 +82,7 @@ const finalCanonical = canonicalURL || url;
         <!-- Back link -->
         <nav class="no-print">
           <a
-            href="/blog"
+            href={withBase("/blog")}
             class="text-muted hover:text-accent inline-flex items-center gap-1.5 text-sm font-medium transition"
           >
             <span aria-hidden="true">←</span>

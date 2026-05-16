@@ -1,4 +1,6 @@
 ---
+import { withBase } from "../lib/url";
+
 interface Job {
   titleKey: string;
   title: string;
@@ -267,7 +269,7 @@ const earlier: Array<{
           <header class="flex items-start gap-4 sm:gap-5">
             {job.logo && (
               <img
-                src={job.logo}
+                src={withBase(job.logo)}
                 alt={job.company}
                 width="48"
                 height="48"

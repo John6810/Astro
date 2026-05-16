@@ -10,6 +10,7 @@ import Analytics from "../../components/Analytics.astro";
 import FloatingTheme from "../../components/FloatingTheme.astro";
 import Footer from "../../components/Footer.astro";
 import BlogCard from "../../components/blog/BlogCard.astro";
+import { withBase } from "../../lib/url";
 
 type BlogPost = CollectionEntry<"blog">;
 
@@ -28,7 +29,8 @@ const posts = allPosts
 const title = "Blog — Jonathan Aerts";
 const description =
   "Notes sur Azure Landing Zone, Terraform/Terragrunt, AKS et plateformes cloud sous régulation.";
-const canonicalURL = "https://jonathan-aerts.dev/blog/";
+const blogPath = withBase("/blog/");
+const canonicalURL = Astro.site ? new URL(blogPath, Astro.site).toString() : blogPath;
 ---
 
 <!doctype html>
@@ -62,7 +64,7 @@ const canonicalURL = "https://jonathan-aerts.dev/blog/";
         <!-- Back link -->
         <nav class="no-print">
           <a
-            href="/recruiter"
+            href={withBase("/recruiter")}
             class="text-muted hover:text-accent inline-flex items-center gap-1.5 text-sm font-medium transition"
           >
             <span aria-hidden="true">←</span>
@@ -89,7 +91,7 @@ const canonicalURL = "https://jonathan-aerts.dev/blog/";
             <div class="grid gap-4 sm:grid-cols-2">
               {posts.map((p: BlogPost & { minutes: number }) => (
                 <BlogCard
-                  href={`/blog/${p.id}/`}
+                  href={withBase(`/blog/${p.id}/`)}
                   title={p.data.title}
                   description={p.data.description}
                   pubDate={p.data.pubDate}

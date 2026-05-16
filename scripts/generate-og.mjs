@@ -24,7 +24,7 @@ const TEXT_TERTIARY = "#6b7280";
 const NAME = "Jonathan Aerts";
 const TITLE = "Senior Cloud Platform Architect";
 const SUBTITLE = "Azure Landing Zone · Terraform · GitOps · Platform Engineering";
-const URL = "jonathan-aerts.dev/recruiter";
+const URL = "john6810.github.io/Astro/recruiter";
 
 async function generate() {
   const avatarBuffer = readFileSync(resolve(root, "public/images/avatar.jpg"));

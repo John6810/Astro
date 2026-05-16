@@ -1,19 +1,22 @@
 ---
 // Static-friendly redirect to /recruiter
+import { withBase } from "../lib/url";
+const recruiterPath = withBase("/recruiter");
+const canonical = Astro.site ? new URL(recruiterPath, Astro.site).toString() : recruiterPath;
 ---
 
 <!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=/recruiter" />
-    <link rel="canonical" href="https://jonathan-aerts.dev/recruiter" />
+    <meta http-equiv="refresh" content={`0; url=${recruiterPath}`} />
+    <link rel="canonical" href={canonical} />
     <title>Jonathan Aerts — Senior Cloud Platform Architect</title>
   </head>
   <body>
-    <script>
-      window.location.replace("/recruiter");
+    <script is:inline define:vars={{ recruiterPath }}>
+      window.location.replace(recruiterPath);
     </script>
-    <p>Redirecting to <a href="/recruiter">/recruiter</a>…</p>
+    <p>Redirecting to <a href={recruiterPath}>{recruiterPath}</a>…</p>
   </body>
 </html>

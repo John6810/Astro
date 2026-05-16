@@ -2,6 +2,7 @@
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import readingTimeFn from "reading-time";
 import BlogPostLayout from "../../layouts/BlogPostLayout.astro";
+import { withBase } from "../../lib/url";
 
 type BlogPost = CollectionEntry<"blog">;
 
@@ -23,7 +24,8 @@ export async function getStaticPaths() {
 const { post, minutes } = Astro.props as Props;
 const { Content } = await render(post);
 
-const url = new URL(`/blog/${post.id}/`, Astro.site).toString();
+const postPath = withBase(`/blog/${post.id}/`);
+const url = Astro.site ? new URL(postPath, Astro.site).toString() : postPath;
 ---
 
 <BlogPostLayout
