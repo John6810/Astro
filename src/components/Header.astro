@@ -1,5 +1,6 @@
 ---
 // Devscard-style header with FR/EN/JP language switcher.
+import { withBase } from "../lib/url";
 ---
 
 <section id="about" class="card p-8">
@@ -7,7 +8,7 @@
     <!-- Left: photo + Download CV button -->
     <div class="flex flex-none flex-col items-center gap-4">
       <img
-        src="/images/avatar.jpg"
+        src={withBase("/images/avatar.jpg")}
         alt="Photo de profil de Jonathan Aerts, Senior Cloud Platform Architect"
         width="208"
         height="208"
@@ -16,7 +17,7 @@
         class="h-24 w-24 max-w-none rounded-lg object-cover sm:h-36 sm:w-36 md:h-52 md:w-52"
       />
       <a
-        href="/cv.pdf"
+        href={withBase("/cv.pdf")}
         download
         class="no-print bg-ink text-paper hover:bg-ink-soft inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-base font-medium shadow-sm transition select-none active:translate-y-px"
         data-i18n="hero_cta_cv"
@@ -145,7 +146,7 @@
               >Currently:</span
             >
             <img
-              src="/images/companies/post-logo.webp"
+              src={withBase("/images/companies/post-logo.webp")}
               alt="POST Luxembourg"
               width="32"
               height="24"
@@ -164,7 +165,7 @@
           >
           <span class="text-ink-soft inline-flex items-center gap-1.5 text-base font-normal">
             <img
-              src="/icons/flag-fr.svg"
+              src={withBase("/icons/flag-fr.svg")}
               alt=""
               width="16"
               height="12"
@@ -176,7 +177,7 @@
           <span aria-hidden="true" class="text-muted">·</span>
           <span class="text-ink-soft inline-flex items-center gap-1.5 text-base font-normal">
             <img
-              src="/icons/flag-gb.svg"
+              src={withBase("/icons/flag-gb.svg")}
               alt=""
               width="16"
               height="12"
@@ -188,7 +189,7 @@
           <span aria-hidden="true" class="text-muted">·</span>
           <span class="text-ink-soft inline-flex items-center gap-1.5 text-base font-normal">
             <img
-              src="/icons/flag-jp.svg"
+              src={withBase("/icons/flag-jp.svg")}
               alt=""
               width="16"
               height="12"

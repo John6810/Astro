@@ -1,4 +1,6 @@
 ---
+import { withBase } from "../lib/url";
+
 const certsDone = [
   "AZ-104 — Azure Administrator",
   "AZ-500 — Azure Security Engineer",
@@ -30,7 +32,7 @@ const certsWip = ["AZ-305 — Azure Solutions Architect Expert", "AWS Solutions 
       <ul class="text-ink-soft mt-1 flex flex-col gap-2 text-sm">
         <li class="flex items-center gap-3">
           <img
-            src="/icons/flag-fr.svg"
+            src={withBase("/icons/flag-fr.svg")}
             alt=""
             width="16"
             height="12"
@@ -41,7 +43,7 @@ const certsWip = ["AZ-305 — Azure Solutions Architect Expert", "AWS Solutions 
         </li>
         <li class="flex items-center gap-3">
           <img
-            src="/icons/flag-gb.svg"
+            src={withBase("/icons/flag-gb.svg")}
             alt=""
             width="16"
             height="12"
@@ -52,7 +54,7 @@ const certsWip = ["AZ-305 — Azure Solutions Architect Expert", "AWS Solutions 
         </li>
         <li class="flex items-center gap-3">
           <img
-            src="/icons/flag-jp.svg"
+            src={withBase("/icons/flag-jp.svg")}
             alt=""
             width="16"
             height="12"

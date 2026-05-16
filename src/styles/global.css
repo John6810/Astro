@@ -1,14 +1,7 @@
 @import "tailwindcss";
 
-/* Self-hosted Inter v3 variable — same file devscard uses */
-@font-face {
-  font-family: "Inter var";
-  font-weight: 100 900;
-  font-display: swap;
-  font-style: normal;
-  font-named-instance: "Regular";
-  src: url("/fonts/Inter-roman.var.woff2") format("woff2");
-}
+/* Inter v3 self-hosted @font-face lives in BaseHead.astro so the URL can
+   respect the configured `base` (e.g. `/Astro/` on GitHub Pages). */
 
 /* Class-based dark mode (toggled on <html>) */
 @custom-variant dark (&:where(.dark, .dark *));

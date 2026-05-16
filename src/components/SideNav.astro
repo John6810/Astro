@@ -1,4 +1,6 @@
 ---
+import { withBase } from "../lib/url";
+
 const items = [
   {
     href: "#about",
@@ -43,7 +45,7 @@ const items = [
     {
       items.map((it, i) => (
         <a
-          href={it.href}
+          href={it.href.startsWith("/") ? withBase(it.href) : it.href}
           title={it.label}
           aria-label={it.label}
           data-nav-link
