@@ -1,22 +1,41 @@
 ---
-// Static-friendly redirect to /recruiter
-import { withBase } from "../lib/url";
-const recruiterPath = withBase("/recruiter");
-const canonical = Astro.site ? new URL(recruiterPath, Astro.site).toString() : recruiterPath;
+import RecruiterLayout from "../layouts/RecruiterLayout.astro";
+import Header from "../components/Header.astro";
+import Stats from "../components/Stats.astro";
+import Experience from "../components/Experience.astro";
+import Skills from "../components/Skills.astro";
+import SelectedProjects from "../components/SelectedProjects.astro";
+import Education from "../components/Education.astro";
+import Contact from "../components/Contact.astro";
+import Footer from "../components/Footer.astro";
+import SideNav from "../components/SideNav.astro";
+import FloatingTheme from "../components/FloatingTheme.astro";
 ---
 
-<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content={`0; url=${recruiterPath}`} />
-    <link rel="canonical" href={canonical} />
-    <title>Jonathan Aerts — Senior Cloud Platform Architect</title>
-  </head>
-  <body>
-    <script is:inline define:vars={{ recruiterPath }}>
-      window.location.replace(recruiterPath);
-    </script>
-    <p>Redirecting to <a href={recruiterPath}>{recruiterPath}</a>…</p>
-  </body>
-</html>
+<RecruiterLayout
+  title="Jonathan Aerts — Senior Cloud Platform Architect | Azure Landing Zone | Belgium · Luxembourg"
+  description="Senior Cloud Platform Architect, 15+ years IT. Azure Landing Zones from scratch, Terraform/GitOps, enterprise governance. Belgium · Luxembourg · EU Remote."
+>
+  <FloatingTheme />
+
+  <div class="flex w-full items-start justify-center xl:relative xl:left-7">
+    <main
+      class="w-full max-w-5xl space-y-4 px-2 py-3 sm:space-y-6 sm:px-8 sm:py-12 lg:space-y-8 lg:py-20"
+    >
+      <Header />
+      <Stats />
+      <Experience />
+      <Skills />
+      <SelectedProjects />
+      <Education />
+      <Contact />
+      <Footer />
+    </main>
+
+    <SideNav />
+  </div>
+
+  <script>
+    import "../scripts/i18n";
+  </script>
+</RecruiterLayout>

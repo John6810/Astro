@@ -17,9 +17,7 @@ export function GET(context: APIContext) {
     "anthropic-ai",
   ];
 
-  const explicitAllows = aiBots
-    .map((ua) => `User-agent: ${ua}\nAllow: /\n`)
-    .join("\n");
+  const explicitAllows = aiBots.map((ua) => `User-agent: ${ua}\nAllow: /\n`).join("\n");
 
   let body = `User-agent: *\nAllow: /\n\n# Explicit allow for AI crawlers — content is intended for sourcing agents and recruiters\n${explicitAllows}`;
 
