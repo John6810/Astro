@@ -27,6 +27,8 @@ jobs:
           node-version: 20
           cache: "pnpm"
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build site
