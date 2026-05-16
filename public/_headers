@@ -6,9 +6,9 @@
 # slowly) instead of the default short TTL.
 
 # Markdown variants (recruiter + blog + per-post slugs)
+# `/blog/*.md` covers /blog/index.md too — CF glob `*` matches any single
+# path segment, so listing /blog/index.md explicitly was duplicating the header.
 /index.md
-  Cache-Control: public, max-age=3600
-/blog/index.md
   Cache-Control: public, max-age=3600
 /blog/*.md
   Cache-Control: public, max-age=3600
