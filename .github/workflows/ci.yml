@@ -12,7 +12,7 @@ concurrency:
 
 permissions:
   contents: read
-  deployments: read
+  checks: read
 
 jobs:
   # Stage 1: static checks — type-check, format-check, build.
@@ -80,13 +80,21 @@ jobs:
         run: pnpm exec vitest run
 
   # Stage 3: E2E acceptance suite against the Cloudflare Workers Builds
-  # preview deployment. CF posts a Deployment to the GitHub API when a
-  # build completes; we poll for it and pass the environment_url to
-  # Playwright as PREVIEW_URL.
+  # deployment. We poll the GitHub check-runs API for the CF GitHub App
+  # (slug `cloudflare-workers-and-pages`) — that's the only signal CF
+  # Workers Builds posts back to GitHub. Unlike the old CF Pages
+  # integration it does NOT write to the Deployments API, so polling
+  # listDeployments() returns nothing on Worker projects.
   #
-  # main pushes get the production URL (the same deployment goes to
-  # jonathan-aerts.dev once Workers Builds finishes), but for PR branches
-  # we get the per-PR preview at <branch>-astro.<account>.workers.dev.
+  # Once the check-run completes with `success`, we derive PREVIEW_URL
+  # from the branch name using CF's deterministic per-branch alias
+  # (`preview_urls: true` in wrangler.jsonc enables them):
+  #
+  #   - PR / non-main push  → https://<slug>-astro.aerts-jonathan.workers.dev
+  #   - push to main        → https://jonathan-aerts.dev  (custom domain)
+  #
+  # The slug is the branch name lowercased with `/` → `-`. CF truncates
+  # branch aliases to a maximum length so we mirror that ceiling here.
   e2e:
     name: E2E acceptance
     needs: unit
@@ -107,57 +115,103 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Wait for Cloudflare Workers Builds preview
+      - name: Wait for Cloudflare Workers Builds check-run
         id: cf
         uses: actions/github-script@v8
         with:
           script: |
-            // Poll the GitHub Deployments API for a CF Workers Builds
-            // deployment on this commit. CF Workers Builds posts these
-            // automatically. We accept any environment whose name
-            // starts with the configured Worker name or contains
-            // "preview" / "production" — Workers Builds uses several
-            // conventions across plans.
+            // Resolve the SHA the CF build is keyed on. For
+            // `pull_request` events that's the PR head SHA (the merge
+            // SHA never gets a CF build). For `push` events it's
+            // context.sha directly.
             const owner = context.repo.owner;
             const repo  = context.repo.repo;
             const sha   = context.payload.pull_request?.head.sha ?? context.sha;
 
+            // CF GitHub App slug. The same app handles both Pages and
+            // Workers Builds — the check name carries the distinction
+            // ("Workers Builds: <script>" vs "Pages: <project>").
+            const CF_APP_SLUG = "cloudflare-workers-and-pages";
+
             const deadline = Date.now() + 12 * 60 * 1000; // 12 min hard cap
 
             while (Date.now() < deadline) {
-              const { data: deployments } = await github.rest.repos.listDeployments({
-                owner, repo, sha, per_page: 30,
+              const { data } = await github.rest.checks.listForRef({
+                owner, repo, ref: sha, per_page: 100,
               });
+              const cfRun = data.check_runs.find(
+                (r) => r.app?.slug === CF_APP_SLUG
+              );
 
-              for (const deployment of deployments) {
-                const { data: statuses } = await github.rest.repos.listDeploymentStatuses({
-                  owner, repo, deployment_id: deployment.id, per_page: 10,
-                });
-                const latest = statuses[0];
-                if (!latest) continue;
-                if (latest.state === "success" && latest.environment_url) {
-                  core.setOutput("preview_url", latest.environment_url);
-                  core.info(`Resolved preview URL: ${latest.environment_url}`);
-                  return;
-                }
-                if (latest.state === "failure" || latest.state === "error") {
+              if (cfRun) {
+                core.info(
+                  `CF check-run ${cfRun.id} (${cfRun.name}): ${cfRun.status} / ${cfRun.conclusion ?? "—"}`
+                );
+                if (cfRun.status === "completed") {
+                  if (cfRun.conclusion === "success") {
+                    core.info("CF build succeeded — proceeding to e2e.");
+                    return;
+                  }
                   core.setFailed(
-                    `CF Workers Builds deployment ${deployment.id} reported ${latest.state}: ${latest.description ?? ""}`
+                    `CF Workers Build concluded ${cfRun.conclusion}. See ${cfRun.details_url}`
                   );
                   return;
                 }
+              } else {
+                core.info("No CF check-run on this SHA yet.");
               }
-              core.info("No successful CF deployment yet, sleeping 20s…");
               await new Promise((r) => setTimeout(r, 20_000));
             }
-            core.setFailed("Timed out waiting for CF Workers Builds preview");
+            core.setFailed("Timed out waiting for CF Workers Builds check-run");
+
+      - name: Derive PREVIEW_URL
+        id: url
+        run: |
+          # PR events: use the head branch. Push events: use ref_name.
+          # ${GITHUB_HEAD_REF} is empty for non-PR events.
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          if [ "$BRANCH" = "main" ]; then
+            URL="https://jonathan-aerts.dev"
+          else
+            # CF branch-alias slug: lowercase, `/` → `-`, strip other
+            # non-alphanumeric chars (CF replaces them with `-` too).
+            # Capped at 28 chars — CF truncates longer slugs.
+            SLUG=$(printf '%s' "$BRANCH" \
+              | tr '[:upper:]' '[:lower:]' \
+              | tr '/' '-' \
+              | sed 's/[^a-z0-9-]/-/g' \
+              | cut -c1-28 \
+              | sed 's/-*$//')
+            URL="https://${SLUG}-astro.aerts-jonathan.workers.dev"
+          fi
+          echo "Resolved PREVIEW_URL: $URL"
+          echo "preview_url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for preview to respond
+        env:
+          PREVIEW_URL: ${{ steps.url.outputs.preview_url }}
+        run: |
+          # The check-run completing means the deploy API returned 200,
+          # but the edge can lag a few seconds before the URL is
+          # routable. Retry up to 60s before giving up.
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Accept-Language: en-US" "$PREVIEW_URL/" || echo "000")
+            echo "[$((i*5))s] $PREVIEW_URL/ → HTTP $code"
+            case "$code" in
+              200|301|302|404) exit 0 ;;
+            esac
+            sleep 5
+          done
+          echo "::error::Preview URL never became reachable"
+          exit 1
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium firefox
 
       - name: Run E2E suite
         env:
-          PREVIEW_URL: ${{ steps.cf.outputs.preview_url }}
+          PREVIEW_URL: ${{ steps.url.outputs.preview_url }}
         run: pnpm exec playwright test
 
       - name: Upload Playwright report on failure
