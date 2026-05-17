@@ -1,0 +1,33 @@
+# robots.txt — kept in sync with worker/index.ts bot bypass list.
+# A change to either side without the other should be caught by
+# worker/__tests__/bot-coherence.test.ts.
+
+# Default policy: everything indexable except ops endpoints and any
+# future /api/* surface.
+User-agent: *
+Allow: /
+Disallow: /csp-report
+Disallow: /version
+Disallow: /api/
+
+# Explicit Allow blocks for the bots the Worker handles specially in
+# its bypass branch (worker/index.ts BOT_UA regex). These are AI
+# crawlers and major search engines that we want indexing the EN
+# body without going through the Accept-Language redirect. The
+# Allow: / mirrors the worker contract layer-to-layer.
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+# Sitemap (Astro emits `sitemap-index.xml` as the canonical entry
+# point; it then references `sitemap-0.xml` internally).
+Sitemap: https://jonathan-aerts.dev/sitemap-index.xml

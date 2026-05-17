@@ -13,13 +13,20 @@ Workers (Static Assets) at https://jonathan-aerts.dev/.
   `dist/` (Astro's build output)
 - **Security**: 7 response headers + nonce-based CSP — see
   [`docs/security-headers.md`](./docs/security-headers.md)
-- **Observability**: Analytics Engine instrumentation + external
-  synthetic monitoring + drift detection on `/version` — see
-  [`docs/analytics-queries.md`](./docs/analytics-queries.md) and
+- **Observability**: 5-signal stack (GoatCounter traffic + CF Web
+  Analytics RUM + Workers Analytics Engine custom events + Better
+  Stack synthetics + `/version` drift detection). Top-level map in
+  [`docs/observability.md`](./docs/observability.md); query recipes
+  in [`docs/analytics-queries.md`](./docs/analytics-queries.md);
+  external monitors and drift workflow in
   [`docs/monitoring.md`](./docs/monitoring.md). CF-specific
   operational landmines (binding pre-provisioning, Pages → Workers
-  API split, branch-slug truncation collisions) are documented in
+  API split, branch-slug truncation collisions, edge cache
+  invalidation strategy) are documented in
   [`docs/cloudflare-gotchas.md`](./docs/cloudflare-gotchas.md).
+- **Edge cache**: 5-min TTL on `/`, `/fr/`, `/ja/` via the Workers
+  Cache API, salted by commit SHA so deploys invalidate
+  automatically. Per-request CSP nonce is preserved across hits.
 
 ## Tests
 
@@ -65,3 +72,6 @@ pnpm wrangler:tail     # stream Workers Logs
   monitoring (Better Stack, 11 monitors), drift detection workflow
 - [`docs/cloudflare-gotchas.md`](./docs/cloudflare-gotchas.md) —
   operational landmines from the CF Pages → Workers migration
+- [`docs/observability.md`](./docs/observability.md) — 5-signal
+  observability map (RUM + traffic + custom events + synthetics +
+  drift) and the CF Web Analytics setup walkthrough
