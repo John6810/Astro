@@ -26,16 +26,19 @@ const posts = allPosts
     minutes: readingTimeFn(p.body ?? "").minutes,
   }));
 
+// Blog UI is EN-only per migration spec (article bodies keep their original
+// language via the frontmatter `lang` field). No locale routing for /blog/.
 const title = "Blog — Jonathan Aerts";
 const description =
-  "Notes sur Azure Landing Zone, Terraform/Terragrunt, AKS et plateformes cloud sous régulation.";
+  "Technical notes on Azure Landing Zone, Terraform / Terragrunt, AKS and cloud platforms under regulation.";
 const blogPath = withBase("/blog/");
 const canonicalURL = Astro.site ? new URL(blogPath, Astro.site).toString() : blogPath;
 ---
 
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
+    {/* Single-language blog index — no `locale` prop so hreflang alternates are skipped. */}
     <BaseHead title={title} description={description} canonicalURL={canonicalURL} />
     <meta name="generator" content={Astro.generator} />
     <meta
@@ -68,7 +71,7 @@ const canonicalURL = Astro.site ? new URL(blogPath, Astro.site).toString() : blo
             class="text-muted hover:text-accent inline-flex items-center gap-1.5 text-sm font-medium transition"
           >
             <span aria-hidden="true">←</span>
-            <span>Retour au profil</span>
+            <span>Back to profile</span>
           </a>
         </nav>
 
@@ -85,7 +88,7 @@ const canonicalURL = Astro.site ? new URL(blogPath, Astro.site).toString() : blo
         {
           posts.length === 0 ? (
             <div class="card text-muted p-8 text-center">
-              <p class="text-sm">Aucun article publié pour l'instant. Repassez bientôt.</p>
+              <p class="text-sm">No published article yet. Check back soon.</p>
             </div>
           ) : (
             <div class="grid gap-4 sm:grid-cols-2">
