@@ -1,1 +1,49 @@
-# Astro
+# Astro — jonathan-aerts.dev
+
+Personal portfolio site. Astro v6 + Tailwind v4, deployed to Cloudflare
+Workers (Static Assets) at https://jonathan-aerts.dev/.
+
+## Architecture
+
+- **Frontend**: Astro static build with i18n routing (`en`, `fr`, `ja`)
+- **Runtime**: Cloudflare Worker (`worker/index.ts`) does
+  `Accept-Language` + `Cookie` based locale negotiation on `/` only,
+  bot UA bypass, CSP nonce stamping via HTMLRewriter
+- **Static assets**: served by the Worker's `env.ASSETS` binding from
+  `dist/` (Astro's build output)
+- **Security**: 7 response headers + nonce-based CSP — see
+  [`docs/security-headers.md`](./docs/security-headers.md)
+
+## Tests
+
+See [`docs/testing.md`](./docs/testing.md) for the full guide.
+
+Quick reference:
+
+```bash
+pnpm install                                # one-time
+pnpm test                                   # unit tests (vitest)
+pnpm test:csp                               # security headers tests only
+pnpm test:e2e:install                       # one-time: Chromium + Firefox
+pnpm test:e2e                               # E2E against jonathan-aerts.dev
+PREVIEW_URL=https://… pnpm test:e2e         # E2E against a workers.dev preview
+```
+
+CI on every PR: static → unit → e2e (E2E waits for the Cloudflare
+Workers Builds preview deployment via the GitHub Deployments API).
+
+## Development
+
+```bash
+pnpm dev               # astro dev — fast local iteration
+pnpm wrangler:dev      # astro build && wrangler dev — full Worker locally
+pnpm wrangler:deploy   # deploy to CF Workers
+pnpm wrangler:tail     # stream Workers Logs
+```
+
+## Documentation
+
+- [`docs/security-headers.md`](./docs/security-headers.md) — security
+  headers, CSP strategy, `/csp-report` endpoint, strict-dynamic notes
+- [`docs/testing.md`](./docs/testing.md) — testing layout, how to add
+  new ACs, how to debug CI failures

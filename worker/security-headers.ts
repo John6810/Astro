@@ -1,6 +1,6 @@
 // Security response headers + CSP for the CF Worker.
 //
-// Strategy: nonce-based CSP.
+// Strategy: nonce-based CSP with `'strict-dynamic'`, no `'unsafe-inline'`.
 //
 //   - Astro emits a handful of inline <script> blocks per page (JSON-LD,
 //     theme bootstrap, two `type="module"` blocks for partial hydration)
@@ -10,19 +10,19 @@
 //   - Nonce-based CSP via HTMLRewriter is a single per-request token
 //     that we attach to every <script>/<style> element on the fly. The
 //     same nonce goes into the CSP header. No coupling to the build.
-//   - `'unsafe-inline'` is NOT used on script-src. Removed from style-src
-//     too — Astro's scoped styles get the nonce just like scripts.
+//   - `'strict-dynamic'` is layered on `script-src` so modern browsers
+//     trust scripts the nonced bootstrap dynamically inserts (Astro
+//     hydration islands), while older browsers fall back to the
+//     `'self'` + `https://gc.zgo.at` allowlist.
+//   - `'unsafe-inline'` is NOT used on script-src OR style-src.
 //
-// Notes on application:
-//   - applySecurityHeaders MERGES into the response headers; existing
-//     Vary, Cache-Control, Content-Type, Location are preserved so the
-//     locale redirect (Vary: Accept-Language, Cookie + Cache-Control:
-//     no-cache) keeps working.
-//   - CSP is set only when we have a nonce to bind to (i.e. on HTML
-//     responses). Static assets (images, fonts, .md, sitemap) get the
-//     other six security headers but no CSP — CSP has no effect on
-//     non-document responses anyway and emitting it would force the CDN
-//     to vary on it for non-doc content.
+// CSP violation reporting is wired through the same response:
+//   - `Reporting-Endpoints: csp-endpoint="<absolute /csp-report URL>"`
+//     declares the modern Reporting API endpoint.
+//   - CSP itself emits `report-to csp-endpoint` (modern browsers) and
+//     `report-uri /csp-report` (legacy CSP2 fallback).
+//   - The matching POST handler lives in worker/index.ts. See
+//     docs/security-headers.md for the end-to-end flow.
 
 /** Static security headers attached to every response. */
 const STATIC_HEADERS: Record<string, string> = {
@@ -35,8 +35,18 @@ const STATIC_HEADERS: Record<string, string> = {
 };
 
 /**
- * Per-request CSP nonce. 16 random bytes → base64 (22 chars). Cheap,
- * unguessable, fits comfortably under any CSP nonce length restriction.
+ * Absolute URL for the CSP report endpoint, used by the modern
+ * Reporting-Endpoints header. Hardcoded to the apex so reports from
+ * preview deployments (workers.dev subdomains) still land in the same
+ * Workers Logs stream we monitor for production.
+ */
+const CSP_REPORT_ENDPOINT_URL = "https://jonathan-aerts.dev/csp-report";
+
+const REPORTING_ENDPOINTS_VALUE = `csp-endpoint="${CSP_REPORT_ENDPOINT_URL}"`;
+
+/**
+ * Per-request CSP nonce. 16 random bytes → base64 (24 chars including
+ * padding). Cheap, unguessable, fits under any nonce length limit.
  */
 export function generateNonce(): string {
   const bytes = new Uint8Array(16);
@@ -47,29 +57,40 @@ export function generateNonce(): string {
 /**
  * Build the CSP string for HTML responses.
  *
- *   - `'nonce-...'` on script-src + style-src whitelists this request's
+ *   - `'nonce-…'` on script-src + style-src whitelists this request's
  *     inline blocks (HTMLRewriter stamps every <script>/<style> with the
  *     same nonce attribute, see rewriteHtmlWithNonce).
- *   - `https://gc.zgo.at` allows the GoatCounter loader; HTMLRewriter
- *     also nonces that <script src> tag, so this is belt-and-braces.
- *   - `connect-src https://*.goatcounter.com` allows the count ping.
- *   - `img-src https:` allows any HTTPS image (linked logos etc.).
- *   - `frame-ancestors 'none'` is the modern counterpart of
+ *   - `'strict-dynamic'` on script-src: modern browsers (CSP3) trust
+ *     dynamic script insertion by nonced scripts. The `'self'` and
+ *     `https://gc.zgo.at` entries are CSP3-ignored when 'strict-dynamic'
+ *     is present, but kept as a fallback for older browsers.
+ *   - `object-src 'none'` explicitly forbids <object>/<embed>/<applet>.
+ *     Some scanners flag the absence even though `default-src 'self'`
+ *     would already restrict these — explicit is clearer.
+ *   - `connect-src https://*.goatcounter.com` allows the analytics
+ *     count beacon.
+ *   - `img-src https:` allows any HTTPS image (logos linked from outside).
+ *   - `frame-ancestors 'none'` is the modern equivalent of
  *     X-Frame-Options: DENY.
- *   - `upgrade-insecure-requests` flips any stray `http://` reference.
+ *   - `report-to csp-endpoint` / `report-uri /csp-report` send violations
+ *     to the in-Worker POST handler that logs them via `console.log`
+ *     (Workers Logs picks them up automatically).
  */
 export function buildCsp(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' https://gc.zgo.at`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://gc.zgo.at`,
     `style-src 'self' 'nonce-${nonce}'`,
     "img-src 'self' data: https:",
     "font-src 'self'",
     "connect-src 'self' https://*.goatcounter.com",
     "frame-ancestors 'none'",
+    "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "upgrade-insecure-requests",
+    "report-to csp-endpoint",
+    "report-uri /csp-report",
   ].join("; ");
 }
 
@@ -80,7 +101,7 @@ export function isHtmlResponse(response: Response): boolean {
 }
 
 /**
- * Stream the response body through HTMLRewriter to stamp `nonce="..."`
+ * Stream the response body through HTMLRewriter to stamp `nonce="…"`
  * on every <script> and <style> element. Non-mutating elsewhere.
  *
  * HTMLRewriter is a CF Workers built-in, designed for this exact use
@@ -98,10 +119,10 @@ export function rewriteHtmlWithNonce(response: Response, nonce: string): Respons
 }
 
 /**
- * Merge the static security headers (+ CSP when `nonce` is given) onto
- * the response. Returns a new Response with the same body, status and
- * status text — existing headers like Vary / Cache-Control / Content-Type
- * / Location are preserved verbatim.
+ * Merge the static security headers (+ CSP and Reporting-Endpoints when
+ * a `nonce` is given) onto the response. Returns a new Response with
+ * the same body, status and status text — existing headers like Vary /
+ * Cache-Control / Content-Type / Location are preserved verbatim.
  */
 export function applySecurityHeaders(
   response: Response,
@@ -114,6 +135,7 @@ export function applySecurityHeaders(
   }
   if (nonce) {
     headers.set("Content-Security-Policy", buildCsp(nonce));
+    headers.set("Reporting-Endpoints", REPORTING_ENDPOINTS_VALUE);
   }
   return new Response(response.body, {
     status: response.status,
