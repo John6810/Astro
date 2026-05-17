@@ -1,4 +1,6 @@
 ---
+// Default-locale (EN) home page. Astro derives Astro.currentLocale = "en" from
+// the empty locale prefix (per prefixDefaultLocale: false in astro.config.mjs).
 import RecruiterLayout from "../layouts/RecruiterLayout.astro";
 import Header from "../components/Header.astro";
 import Stats from "../components/Stats.astro";
@@ -12,10 +14,7 @@ import SideNav from "../components/SideNav.astro";
 import FloatingTheme from "../components/FloatingTheme.astro";
 ---
 
-<RecruiterLayout
-  title="Jonathan Aerts — Senior Cloud Platform Architect | Azure Landing Zone | Belgium · Luxembourg"
-  description="Senior Cloud Platform Architect, 15+ years IT. Azure Landing Zones from scratch, Terraform/GitOps, enterprise governance. Belgium · Luxembourg · EU Remote."
->
+<RecruiterLayout>
   <FloatingTheme />
 
   <div class="flex w-full items-start justify-center xl:relative xl:left-7">
@@ -35,6 +34,9 @@ import FloatingTheme from "../components/FloatingTheme.astro";
     <SideNav />
   </div>
 
+  <!-- Legacy client-side helpers (theme toggle, email obfuscation). The data-i18n
+       swap is no longer needed but the script still hosts those two unrelated
+       bits — commit 8 will trim it down. -->
   <script>
     import "../scripts/i18n";
   </script>

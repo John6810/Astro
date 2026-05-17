@@ -1,9 +1,11 @@
 ---
 // Devscard-style header. Strings resolved server-side via t() — no client-side
-// data-i18n swap anymore. The language switcher (the FR/EN/JP pills here in
-// the legacy version) is replaced by a real-navigation switcher in commit 6.
+// data-i18n swap. The language switcher uses real navigation (anchor links
+// to /, /fr/, /ja/) with a cookie to remember the choice and hash
+// preservation so the user stays anchored on the current section.
 import { withBase } from "../lib/url";
 import { t, resolveLocale } from "../i18n";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
 
 const locale = resolveLocale(Astro.currentLocale);
 ---
@@ -45,32 +47,7 @@ const locale = resolveLocale(Astro.currentLocale);
         </div>
 
         <div class="flex flex-col items-start gap-2 sm:items-end">
-          <!-- Language switcher placeholder — actual interactive switcher arrives in commit 6.
-               These buttons currently no-op (the legacy data-i18n swap was removed). -->
-          <div
-            class="border-line bg-paper flex items-center gap-0.5 rounded-md border p-0.5"
-            role="group"
-            aria-label="Change language"
-          >
-            <button
-              type="button"
-              data-lang="fr"
-              aria-pressed={locale === "fr"}
-              class:list={["lang-btn", locale === "fr" && "is-active"]}>FR</button
-            >
-            <button
-              type="button"
-              data-lang="en"
-              aria-pressed={locale === "en"}
-              class:list={["lang-btn", locale === "en" && "is-active"]}>EN</button
-            >
-            <button
-              type="button"
-              data-lang="jp"
-              aria-pressed={locale === "ja"}
-              class:list={["lang-btn", locale === "ja" && "is-active"]}>JP</button
-            >
-          </div>
+          <LanguageSwitcher />
 
           <!-- Social icons -->
           <div class="flex gap-1.5">
@@ -218,29 +195,3 @@ const locale = resolveLocale(Astro.currentLocale);
     </div>
   </div>
 </section>
-
-<style>
-  .lang-btn {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: var(--muted);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition:
-      color 0.15s,
-      background 0.15s;
-  }
-  .lang-btn:hover {
-    color: var(--ink);
-    background: var(--bg-soft);
-  }
-  .lang-btn.is-active {
-    background: var(--accent);
-    color: var(--accent-on);
-  }
-</style>

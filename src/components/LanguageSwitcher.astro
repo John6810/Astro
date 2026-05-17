@@ -1,0 +1,91 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { resolveLocale, LOCALES, type Locale } from "../i18n";
+
+const current = resolveLocale(Astro.currentLocale);
+
+// Strip a leading /fr or /ja segment so we land on the corresponding path
+// in the target locale (preserving the rest of the route, though for now
+// only the home `/` is locale-routed).
+const pathWithoutLocale = Astro.url.pathname.replace(/^\/(fr|ja)(\/|$)/, "/");
+
+const labels: Record<Locale, string> = { en: "EN", fr: "FR", ja: "JP" };
+
+const links = LOCALES.map((loc) => ({
+  code: loc,
+  label: labels[loc],
+  href: getRelativeLocaleUrl(loc, pathWithoutLocale),
+}));
+---
+
+<div
+  class="border-line bg-paper flex items-center gap-0.5 rounded-md border p-0.5"
+  role="group"
+  aria-label="Change language"
+>
+  {
+    links.map((l) => (
+      <a
+        href={l.href}
+        data-lang-switch={l.code}
+        hreflang={l.code}
+        aria-pressed={l.code === current}
+        class:list={["lang-btn", l.code === current && "is-active"]}
+      >
+        {l.label}
+      </a>
+    ))
+  }
+</div>
+
+<script>
+  // On click:
+  //  1. Persist the user's choice in a `lang` cookie so the edge Worker at /
+  //     can honor it on subsequent visits (overrides Accept-Language).
+  //  2. Preserve the current section anchor (#about, #experience, etc.) by
+  //     intercepting and re-navigating to href + hash.
+  document.querySelectorAll<HTMLAnchorElement>("[data-lang-switch]").forEach((a) => {
+    a.addEventListener("click", (event) => {
+      const lang = a.dataset.langSwitch;
+      if (!lang) return;
+
+      // Cookie: 1 year, Lax (allows top-level navigation), Secure on HTTPS.
+      const secureFlag = location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `lang=${lang}; Path=/; Max-Age=31536000; SameSite=Lax${secureFlag}`;
+
+      // Preserve the current section anchor when switching language.
+      const hash = window.location.hash;
+      if (hash) {
+        event.preventDefault();
+        window.location.href = a.href + hash;
+      }
+    });
+  });
+</script>
+
+<style>
+  .lang-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition:
+      color 0.15s,
+      background 0.15s;
+  }
+  .lang-btn:hover {
+    color: var(--ink);
+    background: var(--bg-soft);
+  }
+  .lang-btn.is-active {
+    background: var(--accent);
+    color: var(--accent-on);
+  }
+</style>
