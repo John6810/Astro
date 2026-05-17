@@ -49,7 +49,34 @@ export default defineConfig({
   output: "static",
   site: SITE,
   base: BASE,
-  integrations: [mdx(), sitemap({ customPages: mdCustomPages })],
+  // Built-in i18n routing. EN serves at /, FR at /fr/, JA at /ja/.
+  // - prefixDefaultLocale: false  -> default locale (EN) lives at root, not /en/
+  // - redirectToDefaultLocale: false -> we handle Accept-Language redirects in
+  //   the Cloudflare Worker (worker/index.ts) so bots and explicit visitors of
+  //   `/` get EN deterministically.
+  // - fallback: if a localized page is missing, fall back to EN content.
+  i18n: {
+    defaultLocale: "en",
+    locales: ["en", "fr", "ja"],
+    routing: {
+      prefixDefaultLocale: false,
+      redirectToDefaultLocale: false,
+    },
+    fallback: { fr: "en", ja: "en" },
+  },
+  integrations: [
+    mdx(),
+    sitemap({
+      // Emit per-locale URLs + xhtml:link rel="alternate" hreflang annotations.
+      // Locale tags are BCP-47 for the sitemap (en-US / fr-BE / ja-JP); Astro's
+      // i18n config above stays with the short codes used in URLs.
+      i18n: {
+        defaultLocale: "en",
+        locales: { en: "en-US", fr: "fr-BE", ja: "ja-JP" },
+      },
+      customPages: mdCustomPages,
+    }),
+  ],
   markdown: {
     shikiConfig: {
       themes: { light: "github-light", dark: "github-dark" },
