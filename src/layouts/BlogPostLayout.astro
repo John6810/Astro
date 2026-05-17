@@ -50,6 +50,11 @@ const finalCanonical = canonicalURL || url;
 <!doctype html>
 <html lang={lang === "en" ? "en" : "fr"}>
   <head>
+    {
+      /* Blog posts are single-language; do NOT pass `locale` to BaseHead so it
+       skips emitting hreflang alternates (no /fr/blog/foo or /ja/blog/foo
+       counterparts exist). */
+    }
     <BaseHead
       title={title + " — Jonathan Aerts"}
       description={description}

@@ -1,35 +1,61 @@
 ---
 import { withBase } from "../lib/url";
+import { HTML_LANG, OG_LOCALE, t, type Locale, LOCALES, DEFAULT_LOCALE } from "../i18n";
 
 interface Props {
-  title: string;
+  title?: string;
   description?: string;
   ogImage?: string;
   canonicalURL?: string;
   themeColor?: string;
   noindex?: boolean;
+  /**
+   * When set, emit hreflang alternates for all locales pointing at the
+   * locale-prefixed variants of the current path. Use this for pages that
+   * exist in every locale (i.e. the i18n-routed root). Omit it for pages
+   * that are only published in one language (e.g. blog post pages).
+   */
+  locale?: Locale;
 }
+
 const {
   title,
-  description = "Senior Cloud Platform Architect with 15+ years IT experience. Specialized in Azure Landing Zones, Terraform/GitOps, multi-region governance, and enterprise-scale cloud platforms.",
+  description,
   ogImage = "/images/og-preview.png",
   canonicalURL,
   themeColor = "#f5f1ea",
   noindex = false,
+  locale,
 } = Astro.props;
 
-// Build canonical from Astro.site + current pathname when not explicitly provided.
-const computedCanonical =
-  canonicalURL ??
-  (Astro.site ? new URL(Astro.url.pathname, Astro.site).toString() : Astro.url.pathname);
+const resolvedLocale: Locale = locale ?? DEFAULT_LOCALE;
+const resolvedTitle = title ?? t("meta_title", resolvedLocale);
+const resolvedDescription = description ?? t("meta_description", resolvedLocale);
+
+// ── Canonical + hreflang alternates ──────────────────────────────────────
+// Strip a leading /fr or /ja segment from the current pathname to get the
+// "canonical path" shared across all locales.
+const canonicalPath = Astro.url.pathname.replace(/^\/(fr|ja)(\/|$)/, "/");
 
 const siteOrigin = Astro.site ? Astro.site.toString().replace(/\/+$/, "") : "";
+
+function localeHref(loc: Locale): string {
+  if (loc === DEFAULT_LOCALE) return `${siteOrigin}${canonicalPath}`;
+  // Insert the locale prefix while preserving the rest of the path.
+  const path = canonicalPath === "/" ? `/${loc}/` : `/${loc}${canonicalPath}`;
+  return `${siteOrigin}${path}`;
+}
+
+const computedCanonical = canonicalURL ?? localeHref(resolvedLocale);
+
 const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteOrigin}${withBase(ogImage)}`;
 
 // Inline @font-face needs the resolved URL at build time
 const interFontUrl = withBase("/fonts/Inter-roman.var.woff2");
 
-// Person JSON-LD — site-level identity, points at canonical site root
+// Person JSON-LD — site-level identity, points at canonical site root.
+// Same content on every locale (the description field is identity-level prose,
+// not page-level meta — kept English/neutral by design).
 const personUrl = siteOrigin
   ? `${siteOrigin}${import.meta.env.BASE_URL.replace(/\/+$/, "")}/`
   : "/";
@@ -51,24 +77,41 @@ const personImage = `${siteOrigin}${withBase("/images/avatar.jpg")}`;
   href={withBase("/rss.xml")}
 />
 
-<meta name="description" content={description} />
+<meta name="description" content={resolvedDescription} />
 <meta name="robots" content={noindex ? "noindex, follow" : "index, follow"} />
 <link rel="canonical" href={computedCanonical} />
 <meta name="author" content="Jonathan Aerts" />
 
+{
+  /* Emit hreflang alternates only for pages that exist in every locale.
+   * For single-language pages (blog posts, etc.) we omit them so search
+   * engines don't think a non-existent localized variant is missing. */
+  locale && (
+    <>
+      {LOCALES.map((loc) => (
+        <link rel="alternate" hreflang={HTML_LANG[loc]} href={localeHref(loc)} />
+      ))}
+      <link rel="alternate" hreflang="x-default" href={localeHref(DEFAULT_LOCALE)} />
+    </>
+  )
+}
+
 <meta property="og:type" content="profile" />
 <meta property="og:url" content={computedCanonical} />
-<meta property="og:title" content={title} />
-<meta property="og:description" content={description} />
+<meta property="og:title" content={resolvedTitle} />
+<meta property="og:description" content={resolvedDescription} />
 <meta property="og:image" content={fullOgImage} />
-<meta property="og:locale" content="fr_BE" />
-<meta property="og:locale:alternate" content="en_US" />
-<meta property="og:locale:alternate" content="ja_JP" />
+<meta property="og:locale" content={OG_LOCALE[resolvedLocale]} />
+{
+  LOCALES.filter((l) => l !== resolvedLocale).map((l) => (
+    <meta property="og:locale:alternate" content={OG_LOCALE[l]} />
+  ))
+}
 <meta property="og:site_name" content="Jonathan Aerts — Cloud Architect Portfolio" />
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content={title} />
-<meta name="twitter:description" content={description} />
+<meta name="twitter:title" content={resolvedTitle} />
+<meta name="twitter:description" content={resolvedDescription} />
 <meta name="twitter:image" content={fullOgImage} />
 
 <script
@@ -188,7 +231,7 @@ const personImage = `${siteOrigin}${withBase("/images/avatar.jpg")}`;
   })}
 />
 
-<title>{title}</title>
+<title>{resolvedTitle}</title>
 
 <!-- Inter v3 self-hosted: define @font-face here so the URL respects `base` -->
 <style is:global define:vars={{ interFontUrl: `url("${interFontUrl}")` }}>
