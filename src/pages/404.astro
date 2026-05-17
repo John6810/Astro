@@ -1,0 +1,58 @@
+---
+// 404 page served by Cloudflare Workers' `not_found_handling: "404-page"`
+// when no static asset matches the request path. Same chrome as the rest
+// of the site (RecruiterLayout → BaseHead → fonts/theme/JSON-LD), but
+// noindex so search engines don't pick it up.
+import RecruiterLayout from "../layouts/RecruiterLayout.astro";
+import Footer from "../components/Footer.astro";
+import FloatingTheme from "../components/FloatingTheme.astro";
+import { withBase } from "../lib/url";
+---
+
+<RecruiterLayout title="404 — Jonathan Aerts" description="Page not found." noindex={true}>
+  <FloatingTheme />
+
+  <div class="flex w-full items-start justify-center xl:relative xl:left-7">
+    <main class="flex w-full max-w-3xl flex-col gap-8 px-2 py-3 sm:px-8 sm:py-12 lg:py-20">
+      <section class="card flex flex-col gap-6 p-8 sm:p-12">
+        <span class="text-accent font-mono text-[11px] tracking-[0.12em] uppercase">404</span>
+        <h1 class="text-ink text-3xl leading-tight font-extrabold tracking-tight sm:text-4xl">
+          Page not found
+        </h1>
+        <p class="text-muted text-base leading-relaxed sm:text-[17px]">
+          This page doesn't exist or has moved.
+        </p>
+
+        <div class="mt-2 flex flex-wrap gap-3">
+          <a
+            href={withBase("/")}
+            class="bg-ink text-paper hover:bg-ink-soft inline-flex h-10 items-center rounded-md px-4 text-sm font-medium shadow-sm transition select-none active:translate-y-px"
+          >
+            <span aria-hidden="true" class="mr-1.5">←</span>
+            Back to home
+          </a>
+          <a
+            href={withBase("/fr/")}
+            class="border-line bg-paper text-ink-soft hover:bg-bg-soft hover:text-accent inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium transition select-none active:translate-y-px"
+          >
+            Version française
+          </a>
+          <a
+            href={withBase("/ja/")}
+            class="border-line bg-paper text-ink-soft hover:bg-bg-soft hover:text-accent inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium transition select-none active:translate-y-px"
+          >
+            日本語版
+          </a>
+        </div>
+      </section>
+
+      <Footer />
+    </main>
+  </div>
+
+  <!-- Reuse the same client helpers (theme toggle, email obfuscation) as the
+       main pages so the 404 chrome behaves identically. -->
+  <script>
+    import "../scripts/i18n";
+  </script>
+</RecruiterLayout>
