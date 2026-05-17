@@ -229,13 +229,28 @@ async function navigateAndCollectErrors(page: Page, path: string) {
   const cspErrors: string[] = [];
   const pageErrors: string[] = [];
   page.on("console", (msg) => {
+    const type = msg.type(); // "error", "warning", "info", "log", …
+    // We only care about hard CSP failures — actual `error` entries
+    // (blocked execution) or browser-reported violations. Informational
+    // *warnings* are noise:
+    //   - Firefox emits a `warning` whenever a CSP combines
+    //     `'strict-dynamic'` with source-list entries like `'self'` or
+    //     explicit URLs, because spec says those entries are then
+    //     ignored. The behaviour is correct and intentional — the
+    //     warning is just chatty.
+    //   - Chromium emits similar info-level messages for the same
+    //     situation.
+    // Anything that is *not* a console `error` is dropped here so we
+    // don't fail the suite on cosmetic browser chatter.
+    if (type !== "error") return;
+
     const text = msg.text();
     if (
       text.toLowerCase().includes("content security policy") ||
       text.toLowerCase().includes("csp") ||
       text.toLowerCase().includes("refused to execute")
     ) {
-      cspErrors.push(`${msg.type()}: ${text}`);
+      cspErrors.push(`${type}: ${text}`);
     }
   });
   page.on("pageerror", (err) => {

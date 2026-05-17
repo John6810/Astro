@@ -1,14 +1,17 @@
 // Unit tests for the Analytics Engine instrumentation helpers.
-// classifyUserAgent + localeFromPath are pure functions; recordRequest is
-// tested with a manual mock so we don't need a real ANALYTICS binding.
+// classifyUserAgent + localeFromPath + extractDomain are pure
+// functions; recordRequest + recordCspViolation are tested with a
+// manual mock so we don't need a real ANALYTICS binding.
 
 import { describe, expect, it, vi } from "vitest";
 import {
   classifyUserAgent,
+  extractDomain,
   localeFromPath,
+  recordCspViolation,
   recordRequest,
-  type EventType,
   type AnalyticsLocale,
+  type EventType,
   type UserAgentClass,
 } from "../analytics";
 
@@ -80,7 +83,7 @@ describe("recordRequest", () => {
     });
   });
 
-  it.each<[EventType, AnalyticsLocale, UserAgentClass]>([
+  it.each<[Exclude<EventType, "csp_violation">, AnalyticsLocale, UserAgentClass]>([
     ["redirect_locale", "fr", "human"],
     ["redirect_locale", "ja", "human"],
     ["bot_bypass", "en", "bot_ai"],
@@ -112,5 +115,84 @@ describe("recordRequest", () => {
       recordRequest(dataset as unknown as AnalyticsEngineDataset, "direct_serve", "en", "human")
     ).not.toThrow();
     expect(dataset.writeDataPoint).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("extractDomain", () => {
+  it.each<[string | null | undefined, string]>([
+    // Empty / nullish → unparseable
+    [undefined, "unparseable"],
+    [null, "unparseable"],
+    ["", "unparseable"],
+    // CSP keyword tokens preserved verbatim
+    ["inline", "inline"],
+    ["eval", "eval"],
+    ["self", "self"],
+    ["unsafe-inline", "unsafe-inline"],
+    ["unsafe-eval", "unsafe-eval"],
+    ["wasm-unsafe-eval", "wasm-unsafe-eval"],
+    // Opaque schemes → scheme-only bucket (drop the payload)
+    ["data:image/png;base64,iVBORw0KGgo", "data:"],
+    ["blob:https://example.com/0e7c-c0ffee", "blob:"],
+    ["filesystem:https://example.com/temporary/foo.png", "filesystem:"],
+    ["about:blank", "about:"],
+    ["chrome-extension://abc/popup.html", "chrome-extension:"],
+    // Real http(s) → bare hostname
+    ["https://evil.example/x.js", "evil.example"],
+    ["http://google-analytics.com/collect?v=1", "google-analytics.com"],
+    ["https://cdn.example.org:8443/lib.js", "cdn.example.org"],
+    // Malformed → unparseable
+    ["not a uri", "unparseable"],
+    // file: scheme has no host; we don't bucket it, so hostname is
+    // empty and the fallback kicks in.
+    ["file:///etc/hosts", "unparseable"],
+  ])("extractDomain(%j) === %j", (input, expected) => {
+    expect(extractDomain(input)).toBe(expected);
+  });
+});
+
+describe("recordCspViolation", () => {
+  function makeMockDataset() {
+    return { writeDataPoint: vi.fn() };
+  }
+
+  it("writes the overloaded blob layout", () => {
+    const ds = makeMockDataset();
+    recordCspViolation(ds as unknown as AnalyticsEngineDataset, "script-src", "evil.example");
+    expect(ds.writeDataPoint).toHaveBeenCalledWith({
+      blobs: ["csp_violation", "script-src", "evil.example"],
+      doubles: [1],
+      indexes: ["csp_violation"],
+    });
+  });
+
+  it.each([
+    ["style-src", "inline"],
+    ["img-src", "data:"],
+    ["script-src", "unparseable"],
+    ["unknown", "self"],
+  ])("propagates (%s, %s)", (directive, domain) => {
+    const ds = makeMockDataset();
+    recordCspViolation(ds as unknown as AnalyticsEngineDataset, directive, domain);
+    expect(ds.writeDataPoint).toHaveBeenCalledWith({
+      blobs: ["csp_violation", directive, domain],
+      doubles: [1],
+      indexes: ["csp_violation"],
+    });
+  });
+
+  it("is a no-op when dataset is undefined", () => {
+    expect(() => recordCspViolation(undefined, "script-src", "x.test")).not.toThrow();
+  });
+
+  it("swallows writeDataPoint errors", () => {
+    const ds = {
+      writeDataPoint: vi.fn(() => {
+        throw new Error("AE down");
+      }),
+    };
+    expect(() =>
+      recordCspViolation(ds as unknown as AnalyticsEngineDataset, "script-src", "x.test")
+    ).not.toThrow();
   });
 });

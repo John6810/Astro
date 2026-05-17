@@ -1,9 +1,12 @@
-name,url,method,headers,expect_status,body_contains,header_assertion,frequency_minutes,regions,alert_on_consecutive_failures,recover_on_consecutive_successes
-loc-redirect-fr,https://jonathan-aerts.dev/,GET,"Accept-Language: fr-BE,fr;q=0.9,en;q=0.5",302,,Location: https://jonathan-aerts.dev/fr/,3,all,2,1
-loc-redirect-ja,https://jonathan-aerts.dev/,GET,"Accept-Language: ja-JP,ja;q=0.9",302,,Location: https://jonathan-aerts.dev/ja/,3,all,2,1
-loc-en-direct,https://jonathan-aerts.dev/,GET,"Accept-Language: en-US,en;q=0.9",200,"lang=""en""",,3,all,2,1
-bot-bypass-claude,https://jonathan-aerts.dev/,GET,User-Agent: ClaudeBot/1.0,200,,Location: ABSENT,3,all,2,1
-locale-fr-page,https://jonathan-aerts.dev/fr/,GET,,200,"lang=""fr""",Vary: ABSENT,3,all,2,1
-locale-ja-page,https://jonathan-aerts.dev/ja/,GET,,200,"lang=""ja""",,3,all,2,1
-sitemap-coverage,https://jonathan-aerts.dev/sitemap-index.xml,GET,,200,"https://jonathan-aerts.dev/ AND https://jonathan-aerts.dev/fr/ AND https://jonathan-aerts.dev/ja/",,3,all,2,1
-404-handling,https://jonathan-aerts.dev/nonexistent-path-zzz,GET,,404,Page not found,,3,all,2,1
+name,url,method,headers,body,expect_status,body_contains,header_assertion,frequency_minutes,regions,alert_on_consecutive_failures,recover_on_consecutive_successes,severity
+loc-redirect-fr,https://jonathan-aerts.dev/,GET,"Accept-Language: fr-BE,fr;q=0.9,en;q=0.5",,302,,Location: https://jonathan-aerts.dev/fr/,3,all,2,1,high
+loc-redirect-ja,https://jonathan-aerts.dev/,GET,"Accept-Language: ja-JP,ja;q=0.9",,302,,Location: https://jonathan-aerts.dev/ja/,3,all,2,1,high
+loc-en-direct,https://jonathan-aerts.dev/,GET,"Accept-Language: en-US,en;q=0.9",,200,"lang=""en""",,3,all,2,1,high
+bot-bypass-claude,https://jonathan-aerts.dev/,GET,User-Agent: ClaudeBot/1.0,,200,,Location: ABSENT,3,all,2,1,high
+locale-fr-page,https://jonathan-aerts.dev/fr/,GET,,,200,"lang=""fr""",Vary: ABSENT,3,all,2,1,high
+locale-ja-page,https://jonathan-aerts.dev/ja/,GET,,,200,"lang=""ja""",,3,all,2,1,high
+sitemap-coverage,https://jonathan-aerts.dev/sitemap-index.xml,GET,,,200,"https://jonathan-aerts.dev/ AND https://jonathan-aerts.dev/fr/ AND https://jonathan-aerts.dev/ja/",,3,all,2,1,high
+404-handling,https://jonathan-aerts.dev/nonexistent-path-zzz,GET,,,404,Page not found,,3,all,2,1,high
+csp-header-shape,https://jonathan-aerts.dev/,GET,,,200,,"Content-Security-Policy CONTAINS_ALL: nonce-; 'strict-dynamic'; object-src 'none'; report-to csp-endpoint",5,all,2,1,paging
+csp-report-ingest,https://jonathan-aerts.dev/csp-report,POST,Content-Type: application/csp-report,"{""csp-report"":{""document-uri"":""https://jonathan-aerts.dev/"",""violated-directive"":""script-src"",""blocked-uri"":""https://example.com/synthetic-monitor-probe.js"",""disposition"":""enforce""}}",204,,,5,all,2,1,paging
+version-endpoint,https://jonathan-aerts.dev/version,GET,,,200,"""worker"":""astro""","Content-Type CONTAINS: application/json",3,all,2,1,warning
