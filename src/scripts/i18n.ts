@@ -1,62 +1,14 @@
-import { T, type Lang } from "../i18n/translations";
-
-const LANGS: Lang[] = ["fr", "en", "jp"];
-
-function applyLang(lang: Lang) {
-  const t = T[lang];
-  if (!t) return;
-
-  document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
-    const key = el.getAttribute("data-i18n");
-    if (!key) return;
-    const value = t[key];
-    if (typeof value !== "string") return;
-    // Translations may contain HTML (e.g. <strong> inside bullets/leads).
-    // Heuristic: any '<' character → render as HTML; otherwise treat as plain text.
-    if (value.indexOf("<") >= 0) {
-      el.innerHTML = value;
-    } else {
-      el.textContent = value;
-    }
-  });
-
-  // Sync lang switcher buttons
-  LANGS.forEach((l) => {
-    document.querySelectorAll<HTMLElement>('[data-lang="' + l + '"]').forEach((btn) => {
-      const active = l === lang;
-      btn.classList.toggle("is-active", active);
-      btn.setAttribute("aria-pressed", String(active));
-    });
-  });
-
-  document.documentElement.lang = lang === "jp" ? "ja" : lang;
-  try {
-    localStorage.setItem("preferred-lang", lang);
-  } catch {}
-}
-
-// Wire up switcher buttons
-document.querySelectorAll<HTMLButtonElement>("[data-lang]").forEach((btn) => {
-  btn.addEventListener("click", () => applyLang(btn.dataset.lang as Lang));
-});
-
-function detectLang(): Lang {
-  const browserLang = (navigator.language || "en").toLowerCase();
-  if (browserLang.startsWith("ja")) return "jp";
-  if (browserLang.startsWith("fr")) return "fr";
-  if (browserLang.startsWith("en")) return "en";
-  return "fr"; // site is primarily authored in FR, fallback there
-}
-
-// Apply preferred language on load (stored > browser > fallback FR)
-const storedLang = (() => {
-  try {
-    return localStorage.getItem("preferred-lang") as Lang | null;
-  } catch {
-    return null;
-  }
-})();
-applyLang(storedLang && LANGS.includes(storedLang) ? storedLang : detectLang());
+// Small client-side helpers that survive the i18n migration:
+//   1. Email obfuscation — assemble the mailto: address client-side so
+//      naive scrapers don't pick it up from the HTML.
+//   2. Theme toggle — flip the .dark class on <html> and persist the
+//      choice in localStorage.
+//
+// The historical role of this file (DOM-scan and swap [data-i18n]
+// elements per locale) is gone — strings are resolved server-side via
+// the t() helper and the locale-routed pages /, /fr/, /ja/. The file
+// keeps its name only to avoid churn in the existing <script> imports;
+// it could be renamed when convenient.
 
 // Obfuscated email — assemble client-side
 const em = ["hi", "jonathan-aerts", "dev"].join("@").replace(/@([^@]+)$/, ".$1");

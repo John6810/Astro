@@ -1,6 +1,13 @@
 ---
-// Devscard-style header with FR/EN/JP language switcher.
+// Devscard-style header. Strings resolved server-side via t() — no client-side
+// data-i18n swap. The language switcher uses real navigation (anchor links
+// to /, /fr/, /ja/) with a cookie to remember the choice and hash
+// preservation so the user stays anchored on the current section.
 import { withBase } from "../lib/url";
+import { t, resolveLocale } from "../i18n";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
+
+const locale = resolveLocale(Astro.currentLocale);
 ---
 
 <section id="about" class="card p-8">
@@ -20,9 +27,8 @@ import { withBase } from "../lib/url";
         href={withBase("/cv.pdf")}
         download
         class="no-print bg-ink text-paper hover:bg-ink-soft inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-base font-medium shadow-sm transition select-none active:translate-y-px"
-        data-i18n="hero_cta_cv"
       >
-        Download CV
+        {t("hero_cta_cv", locale)}
       </a>
     </div>
 
@@ -37,32 +43,11 @@ import { withBase } from "../lib/url";
           >
             Jonathan Aerts
           </h1>
-          <p class="text-ink-soft mt-1.5 text-[15px] font-normal" data-i18n="hero_role">
-            Senior Cloud Platform Architect · Azure Landing Zone · Terraform/GitOps
-          </p>
+          <p class="text-ink-soft mt-1.5 text-[15px] font-normal">{t("hero_role", locale)}</p>
         </div>
 
         <div class="flex flex-col items-start gap-2 sm:items-end">
-          <!-- Lang switcher -->
-          <div
-            class="border-line bg-paper flex items-center gap-0.5 rounded-md border p-0.5"
-            role="group"
-            aria-label="Change language"
-          >
-            <button
-              id="btn-fr"
-              type="button"
-              data-lang="fr"
-              aria-pressed="true"
-              class="lang-btn is-active">FR</button
-            >
-            <button id="btn-en" type="button" data-lang="en" aria-pressed="false" class="lang-btn"
-              >EN</button
-            >
-            <button id="btn-jp" type="button" data-lang="jp" aria-pressed="false" class="lang-btn"
-              >JP</button
-            >
-          </div>
+          <LanguageSwitcher />
 
           <!-- Social icons -->
           <div class="flex gap-1.5">
@@ -120,9 +105,7 @@ import { withBase } from "../lib/url";
       <div class="flex flex-col gap-1">
         <div class="grid gap-x-6 gap-y-1 sm:grid-cols-2">
           <div>
-            <span class="text-ink-soft text-base font-medium" data-i18n="hero_label_email"
-              >Email:</span
-            >
+            <span class="text-ink-soft text-base font-medium">{t("hero_label_email", locale)}</span>
             <span> </span>
             <a
               data-email-link
@@ -133,17 +116,13 @@ import { withBase } from "../lib/url";
             </a>
           </div>
           <div>
-            <span class="text-ink-soft text-base font-medium" data-i18n="hero_label_from"
-              >From:</span
-            >
+            <span class="text-ink-soft text-base font-medium">{t("hero_label_from", locale)}</span>
             <span> </span>
-            <span class="text-ink-soft text-base font-normal" data-i18n="hero_value_from"
-              >Belgium · Luxembourg</span
-            >
+            <span class="text-ink-soft text-base font-normal">{t("hero_value_from", locale)}</span>
           </div>
           <div class="inline-flex items-baseline gap-1.5">
-            <span class="text-ink-soft text-base font-medium" data-i18n="hero_label_currently"
-              >Currently:</span
+            <span class="text-ink-soft text-base font-medium"
+              >{t("hero_label_currently", locale)}</span
             >
             <img
               src={withBase("/images/companies/post-logo.webp")}
@@ -153,15 +132,15 @@ import { withBase } from "../lib/url";
               class="inline-block h-[1.2em] w-auto flex-none self-center"
               loading="lazy"
             />
-            <span class="text-ink-soft text-base font-normal" data-i18n="hero_value_currently"
-              >POST Luxembourg</span
+            <span class="text-ink-soft text-base font-normal"
+              >{t("hero_value_currently", locale)}</span
             >
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          <span class="text-ink-soft text-base font-medium" data-i18n="hero_label_languages"
-            >Languages:</span
+          <span class="text-ink-soft text-base font-medium"
+            >{t("hero_label_languages", locale)}</span
           >
           <span class="text-ink-soft inline-flex items-center gap-1.5 text-base font-normal">
             <img
@@ -201,17 +180,11 @@ import { withBase } from "../lib/url";
         </div>
       </div>
 
-      <!-- Description -->
+      <!-- Description — contains inline HTML, so set:html. -->
       <p
         class="text-muted text-sm leading-relaxed font-normal sm:text-base sm:leading-relaxed"
-        data-i18n="hero_desc"
-      >
-        Senior Cloud Platform Architect avec <strong class="text-ink font-bold"
-          >15+ ans d'expérience IT</strong
-        > et 5+ ans focalisés sur les environnements Azure enterprise. Spécialisé dans la conception et
-        le déploiement d'<strong class="text-ink font-bold">Azure Landing Zones</strong> de A à Z — gouvernance,
-        networking multi-région, et automatisation complète via Terraform/Terragrunt.
-      </p>
+        set:html={t("hero_desc", locale)}
+      />
 
       <!-- Status tag pills -->
       <div class="flex flex-wrap gap-2">
@@ -222,29 +195,3 @@ import { withBase } from "../lib/url";
     </div>
   </div>
 </section>
-
-<style>
-  .lang-btn {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: var(--muted);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition:
-      color 0.15s,
-      background 0.15s;
-  }
-  .lang-btn:hover {
-    color: var(--ink);
-    background: var(--bg-soft);
-  }
-  .lang-btn.is-active {
-    background: var(--accent);
-    color: var(--accent-on);
-  }
-</style>

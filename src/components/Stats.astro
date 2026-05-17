@@ -1,12 +1,16 @@
 ---
+import { t, resolveLocale, type DictKey } from "../i18n";
+
+const locale = resolveLocale(Astro.currentLocale);
+
 // Ordered experience -> scope -> impact, 6 cells matching the lg:grid-cols-6 layout.
-const stats = [
-  { num: "15+", labelKey: "stat_years_label", label: "ans d'IT" },
-  { num: "5+", labelKey: "stat_azure_label", label: "ans sur Azure" },
-  { num: "4", labelKey: "stat_alz_label", label: "Landing Zones from scratch" },
-  { num: "26", labelKey: "stat_subscriptions_label", label: "souscriptions Azure gouvernées" },
-  { num: "500K€+", labelKey: "stat_budget_label", label: "budget piloté" },
-  { num: "35+", labelKey: "stat_trained_label", label: "ingénieurs formés" },
+const stats: Array<{ num: string; labelKey: DictKey }> = [
+  { num: "15+", labelKey: "stat_years_label" },
+  { num: "5+", labelKey: "stat_azure_label" },
+  { num: "4", labelKey: "stat_alz_label" },
+  { num: "26", labelKey: "stat_subscriptions_label" },
+  { num: "500K€+", labelKey: "stat_budget_label" },
+  { num: "35+", labelKey: "stat_trained_label" },
 ];
 ---
 
@@ -18,11 +22,8 @@ const stats = [
           <div class="text-accent text-3xl leading-none font-extrabold tracking-tight whitespace-nowrap">
             {s.num}
           </div>
-          <div
-            class="text-muted mt-2 text-[13px] leading-snug whitespace-nowrap"
-            data-i18n={s.labelKey}
-          >
-            {s.label}
+          <div class="text-muted mt-2 text-[13px] leading-snug whitespace-nowrap">
+            {t(s.labelKey, locale)}
           </div>
         </div>
       ))

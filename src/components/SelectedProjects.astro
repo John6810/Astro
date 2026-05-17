@@ -1,48 +1,36 @@
 ---
+import { t, resolveLocale, type DictKey } from "../i18n";
+
+const locale = resolveLocale(Astro.currentLocale);
+
 type Project = {
-  title: string;
-  titleKey: string;
-  tagline: string;
-  taglineKey: string;
-  description: string;
-  descKey: string;
+  titleKey: DictKey;
+  taglineKey: DictKey;
+  descKey: DictKey;
   tags: string[];
-  link?: { url: string; label: string; labelKey: string };
+  link?: { url: string; labelKey: DictKey };
 };
 
 const projects: Project[] = [
   {
-    title: "Terraform Azure Module Library",
     titleKey: "proj1_title",
-    tagline: "Bibliothèque open source · alignée AVM / CAF",
     taglineKey: "proj1_tagline",
-    description:
-      "Bibliothèque open source de modules Terraform Azure que je maintiens — networking, AKS, Key Vault, RBAC, Private Endpoints, FinOps Hub, Palo Alto HA, et plus. Patterns AVM (validation, lookup, locks), telemetry, diagnostic settings et naming conventions par défaut.",
     descKey: "proj1_desc",
     tags: ["Terraform", "Azure", "AVM", "IaC", "GitHub Actions"],
     link: {
       url: "https://github.com/John6810/terraform-azurerm-modules",
-      label: "📦 github.com/John6810/terraform-azurerm-modules →",
       labelKey: "proj1_link",
     },
   },
   {
-    title: "Distributed Scoring Platform",
     titleKey: "proj2_title",
-    tagline: "Event-driven architecture · K8s / ArgoCD · 359 tests",
     taglineKey: "proj2_tagline",
-    description:
-      "Plateforme distribuée de scoring multi-critères déployée en GitOps sur cluster Kubernetes personnel. Architecture multi-couches : CLI (19 commandes), REST API FastAPI (19 endpoints), CronJobs Kubernetes pour les pipelines de scan automatique, bot Discord companion pour les notifications. Logique métier modulaire, validation par 359 tests pytest, déploiement GitOps via ArgoCD. Use case d'application : analyse quantitative sur données financières publiques.",
     descKey: "proj2_desc",
     tags: ["Python", "FastAPI", "Kubernetes", "ArgoCD", "Docker", "pytest"],
   },
   {
-    title: "Homelab Kubernetes",
     titleKey: "proj3_title",
-    tagline: "Cluster bare-metal · GitOps end-to-end",
     taglineKey: "proj3_tagline",
-    description:
-      "Cluster Kubernetes 2 nœuds bare-metal, GitOps via ArgoCD ApplicationSet, observabilité Prometheus/Grafana, ingress Traefik, MetalLB pour L2 load balancing, stockage hybride SMB/RawFile CSI. Sealed Secrets pour la gestion des secrets en GitOps. Sandbox de validation des patterns avant production.",
     descKey: "proj3_desc",
     tags: ["Kubernetes", "ArgoCD", "Traefik", "Prometheus", "MetalLB", "Sealed Secrets"],
   },
@@ -50,29 +38,22 @@ const projects: Project[] = [
 ---
 
 <section id="projects" class="card p-8">
-  <h2 class="h-section" data-i18n="section_projects">Selected projects</h2>
+  <h2 class="h-section">{t("section_projects", locale)}</h2>
 
   <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
     {
       projects.map((p) => (
         <article class="card-soft flex flex-col gap-3 p-5 transition duration-300 hover:translate-y-[-2px]">
           <header class="flex flex-col gap-1">
-            <h3 class="text-ink text-base leading-snug font-extrabold" data-i18n={p.titleKey}>
-              {p.title}
-            </h3>
-            <p
-              class="text-accent font-mono text-[11px] tracking-[0.06em] uppercase"
-              data-i18n={p.taglineKey}
-            >
-              {p.tagline}
+            <h3 class="text-ink text-base leading-snug font-extrabold">{t(p.titleKey, locale)}</h3>
+            <p class="text-accent font-mono text-[11px] tracking-[0.06em] uppercase">
+              {t(p.taglineKey, locale)}
             </p>
           </header>
-          <p class="text-muted text-sm leading-relaxed" data-i18n={p.descKey}>
-            {p.description}
-          </p>
+          <p class="text-muted text-sm leading-relaxed">{t(p.descKey, locale)}</p>
           <div class="mt-auto flex flex-wrap gap-1.5 pt-2">
-            {p.tags.map((t) => (
-              <span class="tag">{t}</span>
+            {p.tags.map((tg) => (
+              <span class="tag">{tg}</span>
             ))}
           </div>
           {p.link && (
@@ -81,9 +62,8 @@ const projects: Project[] = [
               target="_blank"
               rel="noopener noreferrer"
               class="text-accent mt-1 inline-flex items-baseline gap-1 self-start text-[13px] font-medium decoration-2 underline-offset-4 transition-colors hover:underline"
-              data-i18n={p.link.labelKey}
             >
-              {p.link.label}
+              {t(p.link.labelKey, locale)}
             </a>
           )}
         </article>

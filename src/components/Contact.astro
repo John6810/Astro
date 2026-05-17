@@ -1,17 +1,14 @@
 ---
+import { t, resolveLocale } from "../i18n";
 
+const locale = resolveLocale(Astro.currentLocale);
 ---
 
 <section id="contact" class="card p-8">
-  <h2 class="h-section" data-i18n="section_contact">Contact</h2>
+  <h2 class="h-section">{t("section_contact", locale)}</h2>
 
-  <p
-    class="text-muted mt-4 max-w-2xl text-sm leading-relaxed sm:text-base sm:leading-relaxed"
-    data-i18n="contact_desc"
-  >
-    Rôles cibles : Senior / Principal Cloud Architect, Cloud Solution Architect, ou Customer Success
-    Engineer — chez un hyperscaler (Microsoft, AWS, HashiCorp), une scale-up tech ou un
-    environnement enterprise sous régulation.
+  <p class="text-muted mt-4 max-w-2xl text-sm leading-relaxed sm:text-base sm:leading-relaxed">
+    {t("contact_desc", locale)}
   </p>
 
   <div class="mt-8 flex flex-wrap gap-3">
@@ -65,7 +62,7 @@
           cy="9"
           r="2.5"></circle></svg
       >
-      <span data-i18n="contact_loc">Belgium · Luxembourg</span>
+      <span>{t("contact_loc", locale)}</span>
     </span>
   </div>
 </section>

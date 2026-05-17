@@ -1,0 +1,43 @@
+---
+// French locale entry point. All inner components read Astro.currentLocale
+// ("fr" here, derived by Astro from the URL path) and resolve strings via
+// t() so the SSR HTML lands fully translated, no client-side swap needed.
+import RecruiterLayout from "../../layouts/RecruiterLayout.astro";
+import Header from "../../components/Header.astro";
+import Stats from "../../components/Stats.astro";
+import Experience from "../../components/Experience.astro";
+import Skills from "../../components/Skills.astro";
+import SelectedProjects from "../../components/SelectedProjects.astro";
+import Education from "../../components/Education.astro";
+import Contact from "../../components/Contact.astro";
+import Footer from "../../components/Footer.astro";
+import SideNav from "../../components/SideNav.astro";
+import FloatingTheme from "../../components/FloatingTheme.astro";
+---
+
+<RecruiterLayout>
+  <FloatingTheme />
+
+  <div class="flex w-full items-start justify-center xl:relative xl:left-7">
+    <main
+      class="w-full max-w-5xl space-y-4 px-2 py-3 sm:space-y-6 sm:px-8 sm:py-12 lg:space-y-8 lg:py-20"
+    >
+      <Header />
+      <Stats />
+      <Experience />
+      <Skills />
+      <SelectedProjects />
+      <Education />
+      <Contact />
+      <Footer />
+    </main>
+
+    <SideNav />
+  </div>
+
+  <!-- Legacy script: hosts theme toggle + email obfuscation. The i18n swap
+       portion is dead (no [data-i18n] elements left); commit 8 trims it. -->
+  <script>
+    import "../../scripts/i18n";
+  </script>
+</RecruiterLayout>

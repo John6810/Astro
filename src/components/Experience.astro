@@ -1,49 +1,31 @@
 ---
 import { withBase } from "../lib/url";
+import { t, resolveLocale, type DictKey } from "../i18n";
+
+const locale = resolveLocale(Astro.currentLocale);
 
 interface Job {
-  titleKey: string;
-  title: string;
-  companyKey: string;
-  company: string;
-  metaKey?: string;
-  meta?: string;
-  dateKey: string;
-  date: string;
-  contextKey: string;
-  context: string;
-  bulletsKeys: string[];
-  bullets: string[];
+  titleKey: DictKey;
+  companyKey: DictKey;
+  metaKey?: DictKey;
+  dateKey: DictKey;
+  contextKey: DictKey;
+  bulletsKeys: DictKey[];
   tags: string[];
   refs?: string[];
   logo?: string;
-  references?: { url: string; labelKey: string; label: string }[];
+  references?: { url: string; labelKey: DictKey }[];
 }
 
 const jobs: Job[] = [
   {
     titleKey: "job1_title",
-    title: "Senior Cloud Platform Architect",
     companyKey: "job1_company",
-    company: "POST Luxembourg",
     metaKey: "job1_location",
-    meta: "Luxembourg",
     dateKey: "job1_date",
-    date: "Août 2024 — Présent",
     contextKey: "job1_context",
-    context:
-      "Recruté pour bâtir solo la fondation cloud de POST Luxembourg — opérateur télécom et banque postale du Grand-Duché, supervisé par la CSSF. Mission : héberger les workloads bancaires critiques sur Azure dans un cadre Cloud Outsourcing conforme. Aucun existant à l'arrivée. 13 mois de delivery continue.",
     logo: "/images/companies/post-logo.webp",
     bulletsKeys: ["job1_b1", "job1_b2", "job1_b3", "job1_b4", "job1_b5", "job1_b6", "job1_b7"],
-    bullets: [
-      `<strong class="font-bold text-ink">Conçu et livré une Azure Landing Zone Enterprise-Scale</strong> sur <strong class="font-bold text-ink">26 souscriptions</strong> multi-région, alignée Microsoft CAF et Azure Verified Modules — base éligible pour héberger des workloads sous régulation bancaire.`,
-      `<strong class="font-bold text-ink">Aligné la plateforme sur les exigences réglementaires</strong> : contrôles dérivés <strong class="font-bold text-ink">CSSF Circular 22/806</strong> (Cloud Outsourcing), <strong class="font-bold text-ink">DORA</strong>, <strong class="font-bold text-ink">NIS2</strong> et <strong class="font-bold text-ink">ISO 27001</strong>, baselines <strong class="font-bold text-ink">CIS Microsoft Azure</strong>, <strong class="font-bold text-ink">zéro secret persistant</strong> (OIDC / Workload Identity end-to-end), Private Endpoints sur tous les PaaS, chiffrement client-managed généralisé.`,
-      `<strong class="font-bold text-ink">Industrialisé l'Infrastructure as Code</strong> : <strong class="font-bold text-ink">plus de 60 modules Terraform</strong> production-ready, pipeline Terragrunt unique sur tout le périmètre, drift detection automatisée — immutabilité et traçabilité full audit-ready.`,
-      `<strong class="font-bold text-ink">Bâti la plateforme applicative</strong> : Clusters AKS privés en GitOps (Argo CD), <strong class="font-bold text-ink">Azure Virtual Desktop</strong> (Host Pools, FSLogix ZRS, Private Endpoints) pour postes virtuels conformes, observabilité enterprise (Prometheus managé + Grafana, 20+ dashboards), alertes AMBA conformes aux recommandations Microsoft production.`,
-      `<strong class="font-bold text-ink">Formalisé la gouvernance interne</strong> : <strong class="font-bold text-ink">20 ADRs</strong>, 6 runbooks SRE, wiki enterprise de 10K lignes, conventions strictes naming / tagging / RBAC — fondation d'audit et d'onboarding pour les équipes futures.`,
-      `<strong class="font-bold text-ink">Conçoit la stratégie multi-cloud</strong> : Landing Zone AWS multi-compte en design (Control Tower, SCPs, IaC) pour répondre aux exigences de résilience et de diversification fournisseur posées par <strong class="font-bold text-ink">DORA</strong>.`,
-      `<strong class="font-bold text-ink">Outillé le projet d'une suite d'agents IA spécialisés</strong> — encodage des conventions et gotchas, génération assistée de modules et revues d'architecture accélérées.`,
-    ],
     tags: [
       "Azure",
       "Terraform",
@@ -76,36 +58,21 @@ const jobs: Job[] = [
       {
         url: "https://www.microsoft.com/en/customers/story/24351-post-luxembourg-azure",
         labelKey: "job1_link_ms",
-        label: "🔗 Microsoft Customer Story — POST & Azure →",
       },
       {
         url: "https://github.com/John6810/terraform-azurerm-modules",
         labelKey: "job1_link_github",
-        label: "📦 terraform-azurerm-modules — mes modules custom (open source) →",
       },
     ],
   },
   {
     titleKey: "job2_title",
-    title: "Cloud Architect — M365 & Azure Migration",
     companyKey: "job2_company",
-    company: "Alten",
     metaKey: "job2_meta",
-    meta: "Mission : Aéroport de Luxembourg",
     dateKey: "job2_date",
-    date: "Août 2023 — Juillet 2024",
     contextKey: "job2_context",
-    context:
-      "Mission consulting via Alten pour la modernisation IT de l'Aéroport de Luxembourg — infrastructure critique 24/7 du transport aérien luxembourgeois. Objectif double : migrer la messagerie vers Microsoft 365 et poser les premières fondations cloud de l'aéroport.",
     logo: "/images/companies/alten-logo.webp",
     bulletsKeys: ["job2_b1", "job2_b2", "job2_b3", "job2_b4", "job2_b5"],
-    bullets: [
-      `<strong class="font-bold text-ink">Migré 500+ boîtes Exchange on-premises vers Microsoft 365</strong> — coexistence hybride, bascule progressive, retrait du on-prem, zéro perte de service.`,
-      `<strong class="font-bold text-ink">Conçu et déployé le premier Azure Landing Zone de l'aéroport</strong> — fondation modulaire alignée Microsoft CAF, posée pour héberger les futurs workloads de la DSI.`,
-      `<strong class="font-bold text-ink">Industrialisé une bibliothèque initiale de modules Terraform réutilisables</strong> — base IaC qui a préfiguré la stratégie de déploiement cloud du groupe.`,
-      `<strong class="font-bold text-ink">Durci la posture sécurité M365</strong> : Conditional Access, MFA généralisé, <strong class="font-bold text-ink">baselines CIS Microsoft 365</strong>, sensitivity labels, retention policies et Compliance Center.`,
-      `<strong class="font-bold text-ink">Migré les services d'identité vers Entra ID</strong> — convention RBAC, SSO pour les applications métier de l'aéroport.`,
-    ],
     tags: [
       "Azure",
       "Terraform",
@@ -121,25 +88,12 @@ const jobs: Job[] = [
   },
   {
     titleKey: "job3_title",
-    title: "Cloud & Infrastructure Architect",
     companyKey: "job3_company",
-    company: "Astorg",
     metaKey: "job3_meta",
-    meta: "Private Equity",
     dateKey: "job3_date",
-    date: "Sep. 2021 — Juil. 2023",
     contextKey: "job3_context",
-    context:
-      "Modernisation globale de l'infrastructure IT d'Astorg — fonds de Private Equity européen, 250 utilisateurs, 6 bureaux internationaux (LU, FR, UK, DE, IT, US), supervisé par la CSSF au titre de l'AIFMD. Transformation d'un environnement legacy vers une architecture hybride Azure / Entra ID conforme.",
     logo: "/images/companies/astorg-logo.webp",
     bulletsKeys: ["job3_b1", "job3_b2", "job3_b3", "job3_b4", "job3_b5"],
-    bullets: [
-      `<strong class="font-bold text-ink">Conduit la transformation IT globale</strong> sur 6 bureaux internationaux — déploiements on-site (serveurs, stockage, réseau, endpoints), unification du réseau inter-sites via <strong class="font-bold text-ink">Cisco Meraki SD-WAN</strong>, harmonisation des standards.`,
-      `<strong class="font-bold text-ink">Conçu l'architecture hybride Azure</strong> : VNETs, Private Endpoints, Key Vault, Entra ID — fondations Terraform développées from scratch.`,
-      `<strong class="font-bold text-ink">Déployé l'endpoint management unifié</strong> : <strong class="font-bold text-ink">250 postes</strong> et 100+ devices mobiles via Microsoft Intune, policies de compliance et de configuration alignées CIS.`,
-      `<strong class="font-bold text-ink">Aligné la plateforme sur les exigences réglementaires PE</strong> : <strong class="font-bold text-ink">CSSF AIFMD</strong>, <strong class="font-bold text-ink">ISO 27001</strong>, baselines <strong class="font-bold text-ink">CIS Microsoft</strong>, gouvernance RBAC + PIM, Azure Policy systémique.`,
-      `<strong class="font-bold text-ink">Piloté le budget renouvellement infrastructure</strong> (~<strong class="font-bold text-ink">€500 K</strong>) : sélection des fournisseurs, négociation, procurement multi-pays.`,
-    ],
     tags: [
       "Azure",
       "Terraform",
@@ -157,45 +111,22 @@ const jobs: Job[] = [
   },
   {
     titleKey: "job4_title",
-    title: "IT-OT System Administrator",
     companyKey: "job4_company",
-    company: "Guardian Industries",
     metaKey: "job4_meta",
-    meta: "Luxembourg",
     dateKey: "job4_date",
-    date: "Juil. 2019 — Août 2021",
     contextKey: "job4_context",
-    context:
-      "Seul administrateur IT/OT d'un site industriel Guardian Industries — fabrication de verre en production continue 24/7, ~100 utilisateurs. Mission : garantir la continuité IT sous contraintes de production, sans interruption tolérée.",
     logo: "/images/companies/guardian-logo.webp",
     bulletsKeys: ["job4_b1", "job4_b2", "job4_b3", "job4_b4"],
-    bullets: [
-      `<strong class="font-bold text-ink">Opéré seul l'environnement VMware production</strong> : 10+ hosts ESXi, infrastructure RDS/VDI pour les opérations, sauvegardes et plan de reprise.`,
-      `<strong class="font-bold text-ink">Géré l'infrastructure réseau Cisco</strong> : LAN/WAN, segmentation <strong class="font-bold text-ink">IT / OT</strong>, sécurité périmétrique du site industriel.`,
-      `<strong class="font-bold text-ink">Déployé les postes thin client en bord de ligne</strong> : solutions durcies pour environnement industriel, intégration aux applications métier de production.`,
-      `<strong class="font-bold text-ink">Garanti la continuité opérationnelle 24/7</strong> : <strong class="font-bold text-ink">zéro interruption imputable à l'IT sur 2 ans</strong>, support on-call permanent sous contraintes de production continue.`,
-    ],
     tags: ["VMware ESXi", "Microsoft RDS / VDI", "Cisco", "Active Directory", "Windows Server"],
   },
   {
     titleKey: "job5_title",
-    title: "System Engineer — Microsoft 365 & Infrastructure",
     companyKey: "job5_company",
-    company: "GMS-it",
     metaKey: "job5_meta",
-    meta: "Luxembourg",
     dateKey: "job5_date",
-    date: "Oct. 2016 — Août 2019",
     contextKey: "job5_context",
-    context: `Ingénieur système chez GMS-it (<strong class="font-bold text-ink">MSP luxembourgeois</strong>) — délivré bout-en-bout des projets Microsoft 365 et infrastructure pour <strong class="font-bold text-ink">7 clients SMB et fiduciaires luxembourgeois</strong>. Ownership complet : design technique, déploiement, support.`,
     logo: "/images/companies/gms-it-logo.webp",
     bulletsKeys: ["job5_b1", "job5_b2", "job5_b3", "job5_b4"],
-    bullets: [
-      `<strong class="font-bold text-ink">Mené les migrations Exchange on-premises vers Microsoft 365</strong> : analyse de coexistence, setup des tenants, bascule des mailboxes, retrait du legacy on-prem.`,
-      `<strong class="font-bold text-ink">Conçu et livré les projets d'infrastructure clients</strong> : modernisation réseau, virtualisation, sécurité périmétrique, sauvegardes.`,
-      `<strong class="font-bold text-ink">Industrialisé les standards de déploiement M365</strong> : Conditional Access, MFA, RBAC, baselines de hardening — déclinés sur les 7 environnements clients.`,
-      `<strong class="font-bold text-ink">Assuré le run et l'évolution continue</strong> : support N3, gestion des incidents critiques, planification des évolutions infrastructure.`,
-    ],
     tags: [
       "Microsoft 365",
       "Exchange Online",
@@ -209,58 +140,29 @@ const jobs: Job[] = [
   },
   {
     titleKey: "job6_title",
-    title: "VMware Consultant — Global Virtualization Project",
     companyKey: "job6_company",
-    company: "Computacenter",
     metaKey: "job6_meta",
-    meta: "Mission : TI Automotive · Belgique",
     dateKey: "job6_date",
-    date: "Jan. 2014 — Sep. 2016",
     contextKey: "job6_context",
-    context: `Mission consulting via Computacenter pour le projet de virtualisation globale de <strong class="font-bold text-ink">TI Automotive</strong> — équipementier automobile tier-1, présent sur plusieurs usines internationales. Environnement multiculturel et distribué, déplacements multi-pays.`,
     logo: "/images/companies/computacenter-logo.webp",
     bulletsKeys: ["job6_b1", "job6_b2", "job6_b3"],
-    bullets: [
-      `<strong class="font-bold text-ink">Conduit le projet global de virtualisation VMware</strong> : <strong class="font-bold text-ink">200+ hosts ESXi</strong> sur l'ensemble des sites de production internationaux.`,
-      `<strong class="font-bold text-ink">Réalisé les migrations P2V</strong> : bascule des serveurs physiques legacy vers vSphere, déploiements on-site dans plusieurs pays.`,
-      `<strong class="font-bold text-ink">Administré l'infrastructure vSphere à grande échelle</strong> : provisionnement, troubleshooting performance, optimisation des ressources sur le périmètre global.`,
-    ],
     tags: ["VMware vSphere", "ESXi", "vCenter", "Cisco"],
   },
   {
     titleKey: "job7_title",
-    title: "System & Network Administrator",
     companyKey: "job7_company",
-    company: "ETNIC",
     metaKey: "job7_meta",
-    meta: "Bruxelles",
     dateKey: "job7_date",
-    date: "Sep. 2007 — Déc. 2013",
     contextKey: "job7_context",
-    context: `Administrateur système et réseau chez <strong class="font-bold text-ink">ETNIC</strong> — opérateur IT public de la <strong class="font-bold text-ink">Fédération Wallonie-Bruxelles</strong>, supportant le système éducatif francophone belge (écoles et institutions). Périmètre infrastructure étendu : réseau Cisco, virtualisation VMware, parc 100+ serveurs Windows.`,
     logo: "/images/companies/etnic-logo.webp",
     bulletsKeys: ["job7_b1", "job7_b2", "job7_b3"],
-    bullets: [
-      `<strong class="font-bold text-ink">Administré le réseau Cisco</strong> : switching, routing, segmentation VLAN à l'échelle de l'organisation.`,
-      `<strong class="font-bold text-ink">Géré l'infrastructure VMware</strong> : management des hosts ESXi, provisioning et maintenance des VMs.`,
-      `<strong class="font-bold text-ink">Maintenu un parc de 100+ serveurs Windows</strong> : administration système, support des écoles et institutions de la Communauté française de Belgique.`,
-    ],
     tags: ["Cisco", "VMware ESXi", "Windows Server", "Active Directory"],
   },
 ];
-
-const earlier: Array<{
-  titleKey: string;
-  title: string;
-  companyKey: string;
-  company: string;
-  dateKey: string;
-  date: string;
-}> = [];
 ---
 
 <section id="experience" class="card p-8">
-  <h2 class="h-section" data-i18n="section_experience">Expérience professionnelle</h2>
+  <h2 class="h-section">{t("section_experience", locale)}</h2>
 
   <div class="mt-8 flex flex-col gap-10">
     {
@@ -270,7 +172,7 @@ const earlier: Array<{
             {job.logo && (
               <img
                 src={withBase(job.logo)}
-                alt={job.company}
+                alt={t(job.companyKey, locale)}
                 width="48"
                 height="48"
                 loading="lazy"
@@ -279,58 +181,49 @@ const earlier: Array<{
             )}
             <div class="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
               <div class="min-w-0">
-                <h3 class="text-ink text-lg leading-snug font-extrabold" data-i18n={job.titleKey}>
-                  {job.title}
+                <h3 class="text-ink text-lg leading-snug font-extrabold">
+                  {t(job.titleKey, locale)}
                 </h3>
                 <p class="text-muted mt-0.5 text-sm">
-                  <span class="text-accent font-medium" data-i18n={job.companyKey}>
-                    {job.company}
-                  </span>
-                  {job.meta && (
+                  <span class="text-accent font-medium">{t(job.companyKey, locale)}</span>
+                  {job.metaKey && (
                     <>
                       {" "}
-                      · <span data-i18n={job.metaKey}>{job.meta}</span>
+                      · <span>{t(job.metaKey, locale)}</span>
                     </>
                   )}
                 </p>
               </div>
-              <span
-                class="text-muted font-mono text-xs tracking-[0.06em] whitespace-nowrap uppercase"
-                data-i18n={job.dateKey}
-              >
-                {job.date}
+              <span class="text-muted font-mono text-xs tracking-[0.06em] whitespace-nowrap uppercase">
+                {t(job.dateKey, locale)}
               </span>
             </div>
           </header>
 
           <p
             class="text-muted text-sm leading-relaxed italic"
-            data-i18n={job.contextKey}
-            set:html={job.context}
+            set:html={t(job.contextKey, locale)}
           />
 
           <ul class="flex flex-col gap-2">
-            {job.bullets.map((b, i) => (
+            {job.bulletsKeys.map((bKey) => (
               <li class="text-ink-soft grid grid-cols-[12px_1fr] gap-3 text-sm leading-relaxed sm:text-[15px]">
                 <span class="bg-accent mt-2 inline-block h-1 w-1 rounded-full" aria-hidden="true" />
-                <span data-i18n={job.bulletsKeys[i]} set:html={b} />
+                <span set:html={t(bKey, locale)} />
               </li>
             ))}
           </ul>
 
           <div class="mt-2 flex flex-wrap gap-1.5">
-            {job.tags.map((t) => (
-              <span class="tag">{t}</span>
+            {job.tags.map((tg) => (
+              <span class="tag">{tg}</span>
             ))}
           </div>
 
           {job.refs && job.refs.length > 0 && (
             <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-              <span
-                class="text-muted font-mono text-[10px] tracking-[0.12em] uppercase"
-                data-i18n="exp_refs_eyebrow"
-              >
-                Référentiels
+              <span class="text-muted font-mono text-[10px] tracking-[0.12em] uppercase">
+                {t("exp_refs_eyebrow", locale)}
               </span>
               <div class="flex flex-wrap gap-1.5">
                 {job.refs.map((r) => (
@@ -342,11 +235,8 @@ const earlier: Array<{
 
           {job.references && job.references.length > 0 && (
             <div class="border-line mt-2 flex flex-col gap-2 border-l-2 pl-4">
-              <span
-                class="text-muted font-mono text-[10px] tracking-[0.12em] uppercase"
-                data-i18n="exp_sources_eyebrow"
-              >
-                Sources & références
+              <span class="text-muted font-mono text-[10px] tracking-[0.12em] uppercase">
+                {t("exp_sources_eyebrow", locale)}
               </span>
               {job.references.map((r) => (
                 <a
@@ -354,53 +244,14 @@ const earlier: Array<{
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-accent inline-flex items-baseline gap-1 self-start text-sm font-medium decoration-2 underline-offset-4 transition-colors hover:underline"
-                  data-i18n={r.labelKey}
                 >
-                  {r.label}
+                  {t(r.labelKey, locale)}
                 </a>
               ))}
             </div>
           )}
         </article>
       ))
-    }
-
-    {
-      earlier.length > 0 && (
-        <details class="group">
-          <summary class="bg-bg-soft hover:bg-line flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg px-5 py-3 transition">
-            <span class="text-ink-soft text-sm font-medium" data-i18n="earlier_title">
-              Expériences précédentes
-            </span>
-            <span
-              class="text-muted font-mono text-xs transition group-open:rotate-180"
-              aria-hidden="true"
-            >
-              ▾
-            </span>
-          </summary>
-          <div class="mt-4 flex flex-col">
-            {earlier.map((e) => (
-              <div class="border-line grid gap-1 border-t py-3 first:border-t-0 sm:grid-cols-[1fr_auto] sm:items-baseline sm:gap-6">
-                <div>
-                  <span class="text-ink text-sm" data-i18n={e.titleKey}>
-                    {e.title}
-                  </span>
-                  <span class="text-muted ml-2 text-[13px]" data-i18n={e.companyKey}>
-                    {e.company}
-                  </span>
-                </div>
-                <span
-                  class="text-muted font-mono text-xs tracking-[0.05em] uppercase"
-                  data-i18n={e.dateKey}
-                >
-                  {e.date}
-                </span>
-              </div>
-            ))}
-          </div>
-        </details>
-      )
     }
   </div>
 </section>

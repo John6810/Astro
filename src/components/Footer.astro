@@ -1,8 +1,11 @@
 ---
+import { t, resolveLocale } from "../i18n";
+
 const year = new Date().getFullYear();
 // __BUILD_DATE__ is replaced at build time by vite.define (astro.config.mjs).
 // Format: "November 16, 2025".
 const buildDate = __BUILD_DATE__;
+const locale = resolveLocale(Astro.currentLocale);
 ---
 
 <footer
@@ -12,7 +15,5 @@ const buildDate = __BUILD_DATE__;
     <span>© {year} Jonathan Aerts</span>
     <span class="text-[11px] opacity-70">Last updated: {buildDate}</span>
   </div>
-  <span class="font-mono tracking-[0.04em]" data-i18n="footer_built"
-    >Built with Astro · Tailwind v4 · Inter</span
-  >
+  <span class="font-mono tracking-[0.04em]">{t("footer_built", locale)}</span>
 </footer>

@@ -4,19 +4,28 @@ import "../styles/global.css";
 
 import BaseHead from "../components/BaseHead.astro";
 import Analytics from "../components/Analytics.astro";
+import { HTML_LANG, resolveLocale, type Locale } from "../i18n";
 
 interface Props {
-  title: string;
+  /** Optional explicit title; falls back to t("meta_title", locale) in BaseHead. */
+  title?: string;
   description?: string;
   canonicalURL?: string;
+  /**
+   * Locale for this render. Caller can pass it explicitly (preferred for
+   * static pages under /fr/ and /ja/) or omit — we then read Astro.currentLocale
+   * which the framework derives from the URL path per the i18n routing config.
+   */
+  locale?: Locale;
 }
 const { title, description, canonicalURL } = Astro.props;
+const locale: Locale = Astro.props.locale ?? resolveLocale(Astro.currentLocale);
 ---
 
 <!doctype html>
-<html lang="fr">
+<html lang={HTML_LANG[locale]}>
   <head>
-    <BaseHead title={title} description={description} canonicalURL={canonicalURL} />
+    <BaseHead title={title} description={description} canonicalURL={canonicalURL} locale={locale} />
     <meta name="generator" content={Astro.generator} />
     <!-- Content Security Policy: same-origin by default; GoatCounter analytics whitelisted -->
     <meta
