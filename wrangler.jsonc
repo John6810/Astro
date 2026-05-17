@@ -1,16 +1,40 @@
 {
-  // Cloudflare config — static-assets serving.
+  // Cloudflare Workers config — Worker entry + Static Assets binding.
   //
-  // The CF project is provisioned as Pages. Accept-Language redirect on `/`
-  // is implemented as a Pages Function in functions/_middleware.ts (the
-  // platform picks it up automatically, no wrangler config needed).
+  // Project state during the CF Pages → CF Workers migration:
+  //   - This config is the target Workers + Static Assets layout.
+  //   - functions/_middleware.ts is still in the repo as a rollback safety
+  //     net for the current Pages deployment; it will be removed in the
+  //     final cleanup PR (#31).
   //
-  // This file is kept minimal so wrangler-driven local previews still work.
-  // Docs: https://developers.cloudflare.com/pages/functions/
+  // Behaviour:
+  //   - `run_worker_first: true` → the Worker sees every request before the
+  //     asset binding. Required so the Accept-Language redirect logic on `/`
+  //     actually runs; without it the static index.html would short-circuit
+  //     the Worker.
+  //   - `binding: "ASSETS"` exposes a Fetcher inside the Worker
+  //     (env.ASSETS.fetch) so the Worker can delegate paths it doesn't
+  //     transform back to the static bundle.
+  //   - `not_found_handling: "404-page"` makes CF serve dist/404.html on
+  //     unmatched routes. Astro emits that file from src/pages/404.astro.
+  //
+  // Docs:
+  //   https://developers.cloudflare.com/workers/static-assets/
+  //   https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "jonathan-aerts-dev",
-  "compatibility_date": "2025-05-01",
+  "name": "portfolio",
+  "compatibility_date": "2026-05-17",
+  "main": "./worker/index.ts",
   "assets": {
-    "directory": "./dist",
+    "directory": "./dist/",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "404-page",
+  },
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
   },
 }

@@ -17,15 +17,23 @@ interface Props {
    * which the framework derives from the URL path per the i18n routing config.
    */
   locale?: Locale;
+  /** Pass through to BaseHead — set true for 404 / private pages. */
+  noindex?: boolean;
 }
-const { title, description, canonicalURL } = Astro.props;
+const { title, description, canonicalURL, noindex } = Astro.props;
 const locale: Locale = Astro.props.locale ?? resolveLocale(Astro.currentLocale);
 ---
 
 <!doctype html>
 <html lang={HTML_LANG[locale]}>
   <head>
-    <BaseHead title={title} description={description} canonicalURL={canonicalURL} locale={locale} />
+    <BaseHead
+      title={title}
+      description={description}
+      canonicalURL={canonicalURL}
+      locale={locale}
+      noindex={noindex}
+    />
     <meta name="generator" content={Astro.generator} />
     <!-- Content Security Policy: same-origin by default; GoatCounter analytics whitelisted -->
     <meta

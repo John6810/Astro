@@ -11,7 +11,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "astro": "astro",
-    "og:gen": "node scripts/generate-og.mjs"
+    "og:gen": "node scripts/generate-og.mjs",
+    "wrangler:dev": "astro build && wrangler dev",
+    "wrangler:deploy": "wrangler deploy",
+    "wrangler:tail": "wrangler tail"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",
@@ -25,10 +28,12 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@cloudflare/workers-types": "4.20260517.1",
     "prettier": "^3.3.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.8.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "4.92.0"
   },
   "packageManager": "pnpm@9.15.0"
 }
