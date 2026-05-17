@@ -30,6 +30,7 @@ import {
   isHtmlResponse,
   rewriteHtmlWithNonce,
 } from "./security-headers";
+import { handleCspReport, isCspReportRequest } from "./csp-report";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -102,6 +103,13 @@ function readLangCookie(cookieHeader: string | null): Locale | undefined {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    // CSP violation reports — handled BEFORE locale routing. This path
+    // is intentionally NOT served from dist/, MUST NOT carry Vary, and
+    // MUST NOT trigger the Accept-Language redirect. See worker/csp-report.ts.
+    if (isCspReportRequest(request, url)) {
+      return handleCspReport(request);
+    }
 
     // Only the root path participates in the negotiation. Every other URL
     // (assets, /fr/, /ja/, /blog/*, .md routes, sitemap, etc.) goes straight

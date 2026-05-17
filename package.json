@@ -14,7 +14,12 @@
     "og:gen": "node scripts/generate-og.mjs",
     "wrangler:dev": "astro build && wrangler dev",
     "wrangler:deploy": "wrangler deploy",
-    "wrangler:tail": "wrangler tail"
+    "wrangler:tail": "wrangler tail",
+    "test": "astro build && vitest run",
+    "test:watch": "vitest",
+    "test:csp": "astro build && vitest run worker/__tests__/security-headers.test.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium firefox"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",
@@ -28,11 +33,14 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@cloudflare/vitest-pool-workers": "0.16.6",
     "@cloudflare/workers-types": "4.20260517.1",
+    "@playwright/test": "1.60.0",
     "prettier": "^3.3.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "typescript": "^6.0.3",
+    "vitest": "4.1.6",
     "wrangler": "4.92.0"
   },
   "packageManager": "pnpm@9.15.0"
