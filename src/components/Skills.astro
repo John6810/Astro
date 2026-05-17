@@ -1,16 +1,18 @@
 ---
 import { withBase } from "../lib/url";
+import { t, resolveLocale, type DictKey } from "../i18n";
+
+const locale = resolveLocale(Astro.currentLocale);
 
 type IconRef = { kind: "img"; src: string } | { kind: "mono"; mono: string; bg: string };
 
 type Level = "EXPERT" | "AVANCÉ";
 type Skill = { name: string; icon: IconRef; level: Level };
-type Category = { emoji: string; title: string; titleKey: string; skills: Skill[] };
+type Category = { emoji: string; titleKey: DictKey; skills: Skill[] };
 
 const categories: Category[] = [
   {
     emoji: "☁️",
-    title: "Cloud & Architecture",
     titleKey: "cat_cloud",
     skills: [
       {
@@ -32,7 +34,6 @@ const categories: Category[] = [
   },
   {
     emoji: "🔧",
-    title: "IaC & GitOps",
     titleKey: "cat_iac",
     skills: [
       { name: "Terraform", icon: { kind: "img", src: "/icons/terraform.svg" }, level: "EXPERT" },
@@ -51,7 +52,6 @@ const categories: Category[] = [
   },
   {
     emoji: "🌐",
-    title: "Networking & Security",
     titleKey: "cat_network",
     skills: [
       {
@@ -73,7 +73,6 @@ const categories: Category[] = [
   },
   {
     emoji: "🔐",
-    title: "Identity & Governance",
     titleKey: "cat_identity",
     skills: [
       {
@@ -95,7 +94,6 @@ const categories: Category[] = [
   },
   {
     emoji: "📊",
-    title: "Observability & Adjacent",
     titleKey: "cat_observ",
     skills: [
       {
@@ -121,7 +119,7 @@ const levelClass: Record<Level, string> = {
   EXPERT: "text-accent",
   AVANCÉ: "text-ink-soft",
 };
-const levelKey: Record<Level, string> = {
+const levelKey: Record<Level, DictKey> = {
   EXPERT: "level_expert",
   AVANCÉ: "level_avance",
 };
@@ -131,26 +129,20 @@ const learning: LearnItem[] = [
   { name: "AWS Landing Zone · Control Tower · SCPs", icon: { kind: "img", src: "/icons/aws.svg" } },
 ];
 
-const languages = [
-  { src: "/icons/flag-fr.svg", label: "Français — Natif", key: "lang_fr" },
-  { src: "/icons/flag-gb.svg", label: "Anglais — C1 courant", key: "lang_en" },
-  {
-    src: "/icons/flag-jp.svg",
-    label: "日本語 — JLPT N5 certifié · N2 en préparation",
-    key: "lang_jp",
-  },
+const languages: Array<{ src: string; key: DictKey }> = [
+  { src: "/icons/flag-fr.svg", key: "lang_fr" },
+  { src: "/icons/flag-gb.svg", key: "lang_en" },
+  { src: "/icons/flag-jp.svg", key: "lang_jp" },
 ];
 ---
 
 <section id="skills" class="card p-8">
-  <h2 class="h-section" data-i18n="section_skills">Skills</h2>
+  <h2 class="h-section">{t("section_skills", locale)}</h2>
 
   <div class="mt-8 flex flex-col gap-10">
-    <!-- Je maîtrise -->
+    <!-- I know -->
     <div>
-      <h3 class="text-ink mb-6 text-base font-extrabold" data-i18n="skills_mastering">
-        Je maîtrise
-      </h3>
+      <h3 class="text-ink mb-6 text-base font-extrabold">{t("skills_mastering", locale)}</h3>
 
       <div class="flex flex-col gap-7">
         {
@@ -158,7 +150,7 @@ const languages = [
             <div>
               <h4 class="text-ink-soft mb-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] uppercase">
                 <span aria-hidden="true">{cat.emoji}</span>
-                <span data-i18n={cat.titleKey}>{cat.title}</span>
+                <span>{t(cat.titleKey, locale)}</span>
               </h4>
               <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                 {cat.skills.map((s) => (
@@ -186,9 +178,8 @@ const languages = [
                     </div>
                     <span
                       class={`pl-7 font-mono text-[10px] tracking-[0.1em] uppercase ${levelClass[s.level]}`}
-                      data-i18n={levelKey[s.level]}
                     >
-                      {s.level}
+                      {t(levelKey[s.level], locale)}
                     </span>
                   </div>
                 ))}
@@ -199,9 +190,9 @@ const languages = [
       </div>
     </div>
 
-    <!-- J'apprends -->
+    <!-- Learning -->
     <div>
-      <h3 class="text-ink mb-4 text-base font-extrabold" data-i18n="skills_learning">J'apprends</h3>
+      <h3 class="text-ink mb-4 text-base font-extrabold">{t("skills_learning", locale)}</h3>
       <div class="flex flex-wrap gap-2">
         {
           learning.map((s) => (
@@ -231,9 +222,9 @@ const languages = [
       </div>
     </div>
 
-    <!-- Je parle -->
+    <!-- I speak -->
     <div>
-      <h3 class="text-ink mb-4 text-base font-extrabold" data-i18n="skills_speak">Je parle</h3>
+      <h3 class="text-ink mb-4 text-base font-extrabold">{t("skills_speak", locale)}</h3>
       <div class="flex flex-wrap gap-2">
         {
           languages.map((l) => (
@@ -246,7 +237,7 @@ const languages = [
                 class="h-3 w-4 flex-none rounded-[2px] object-cover"
                 loading="lazy"
               />
-              <span data-i18n={l.key}>{l.label}</span>
+              <span>{t(l.key, locale)}</span>
             </span>
           ))
         }

@@ -1,6 +1,10 @@
 ---
 import { withBase } from "../lib/url";
+import { t, resolveLocale } from "../i18n";
 
+const locale = resolveLocale(Astro.currentLocale);
+
+// Certifications and degree are technical labels — same across locales.
 const certsDone = [
   "AZ-104 — Azure Administrator",
   "AZ-500 — Azure Security Engineer",
@@ -11,24 +15,22 @@ const certsWip = ["AZ-305 — Azure Solutions Architect Expert", "AWS Solutions 
 ---
 
 <section id="education" class="card p-8">
-  <h2 class="h-section" data-i18n="section_education">Formation, certifications & langues</h2>
+  <h2 class="h-section">{t("section_education", locale)}</h2>
 
   <div class="mt-8 grid gap-10 sm:grid-cols-2">
-    <!-- Diplôme -->
+    <!-- Degree -->
     <div class="edu-item flex flex-col gap-2">
-      <span class="eyebrow" data-i18n="edu_eb_diplome">Diplôme</span>
-      <h3 class="text-ink text-base leading-snug font-extrabold" data-i18n="edu_degree_title">
-        Bachelier en informatique et systèmes
+      <span class="eyebrow">{t("edu_eb_diplome", locale)}</span>
+      <h3 class="text-ink text-base leading-snug font-extrabold">
+        {t("edu_degree_title", locale)}
       </h3>
-      <p class="text-muted text-sm" data-i18n="edu_degree_school">
-        Haute École de la Province de Liège, Belgique · 2003 – 2007
-      </p>
+      <p class="text-muted text-sm">{t("edu_degree_school", locale)}</p>
     </div>
 
-    <!-- Langues -->
+    <!-- Languages -->
     <div class="edu-item flex flex-col gap-2">
-      <span class="eyebrow" data-i18n="edu_eb_langs">Langues</span>
-      <h3 class="sr-only" data-i18n="edu_langs_title">Langues</h3>
+      <span class="eyebrow">{t("edu_eb_langs", locale)}</span>
+      <h3 class="sr-only">{t("edu_langs_title", locale)}</h3>
       <ul class="text-ink-soft mt-1 flex flex-col gap-2 text-sm">
         <li class="flex items-center gap-3">
           <img
@@ -39,7 +41,7 @@ const certsWip = ["AZ-305 — Azure Solutions Architect Expert", "AWS Solutions 
             class="inline-block h-3 w-4 flex-none rounded-[2px] object-cover"
             loading="lazy"
           />
-          <span data-i18n="lang_fr">Français — Natif</span>
+          <span>{t("lang_fr", locale)}</span>
         </li>
         <li class="flex items-center gap-3">
           <img
@@ -50,7 +52,7 @@ const certsWip = ["AZ-305 — Azure Solutions Architect Expert", "AWS Solutions 
             class="inline-block h-3 w-4 flex-none rounded-[2px] object-cover"
             loading="lazy"
           />
-          <span data-i18n="lang_en">Anglais — C1 courant</span>
+          <span>{t("lang_en", locale)}</span>
         </li>
         <li class="flex items-center gap-3">
           <img
@@ -61,15 +63,15 @@ const certsWip = ["AZ-305 — Azure Solutions Architect Expert", "AWS Solutions 
             class="inline-block h-3 w-4 flex-none rounded-[2px] object-cover"
             loading="lazy"
           />
-          <span data-i18n="lang_jp">日本語 — JLPT N5 certifié · N2 en préparation</span>
+          <span>{t("lang_jp", locale)}</span>
         </li>
       </ul>
     </div>
 
     <!-- Certs obtained -->
     <div class="edu-item flex flex-col gap-2">
-      <span class="eyebrow" data-i18n="edu_eb_certs_done">Certifications obtenues</span>
-      <h3 class="sr-only" data-i18n="edu_certs_done_title">Certifications obtenues</h3>
+      <span class="eyebrow">{t("edu_eb_certs_done", locale)}</span>
+      <h3 class="sr-only">{t("edu_certs_done_title", locale)}</h3>
       <ul class="mt-1 flex flex-col gap-2">
         {
           certsDone.map((c) => (
@@ -100,8 +102,8 @@ const certsWip = ["AZ-305 — Azure Solutions Architect Expert", "AWS Solutions 
 
     <!-- Certs WIP -->
     <div class="edu-item flex flex-col gap-2">
-      <span class="eyebrow" data-i18n="edu_eb_certs_wip">En cours</span>
-      <h3 class="sr-only" data-i18n="edu_certs_wip_title">En cours</h3>
+      <span class="eyebrow">{t("edu_eb_certs_wip", locale)}</span>
+      <h3 class="sr-only">{t("edu_certs_wip_title", locale)}</h3>
       <ul class="mt-1 flex flex-col gap-2">
         {
           certsWip.map((c) => (
