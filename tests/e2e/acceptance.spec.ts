@@ -333,7 +333,18 @@ test.describe("CF Web Analytics RUM beacon", () => {
 
       const beaconRequests: string[] = [];
       page.on("request", (req) => {
-        if (req.url().includes("static.cloudflareinsights.com")) {
+        // Parse the URL so a malicious origin with the cloudflareinsights
+        // hostname in its query string can't masquerade as the beacon.
+        // (Pedantic for an e2e test, but CodeQL's
+        // js/incomplete-url-substring-sanitization rule rightly flags
+        // includes() on URL fragments.)
+        let hostname = "";
+        try {
+          hostname = new URL(req.url()).hostname;
+        } catch {
+          /* not a URL we care about */
+        }
+        if (hostname === "static.cloudflareinsights.com") {
           beaconRequests.push(req.url());
         }
       });

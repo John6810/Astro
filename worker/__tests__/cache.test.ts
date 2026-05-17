@@ -166,7 +166,7 @@ describe("x-cache header lifecycle on `/`", () => {
   it("two consecutive GETs: first emits a defined x-cache, second is HIT", async () => {
     const r1 = await fetchPath("/", { headers: { "Accept-Language": "en-US,en;q=0.9" } });
     expect(r1.status).toBe(200);
-    expect(r1.headers.get("x-cache")).toMatch(/^HIT|MISS$/);
+    expect(r1.headers.get("x-cache")).toMatch(/^(HIT|MISS)$/);
 
     const r2 = await fetchPath("/", { headers: { "Accept-Language": "en-US,en;q=0.9" } });
     expect(r2.status).toBe(200);
@@ -216,7 +216,7 @@ describe("x-cache lifecycle on /fr/ and /ja/", () => {
   it.each(["/fr/", "/ja/"])("two GETs to %s: second is HIT", async (path) => {
     const r1 = await fetchPath(path);
     expect(r1.status).toBe(200);
-    expect(r1.headers.get("x-cache")).toMatch(/^HIT|MISS$/);
+    expect(r1.headers.get("x-cache")).toMatch(/^(HIT|MISS)$/);
 
     const r2 = await fetchPath(path);
     expect(r2.status).toBe(200);
