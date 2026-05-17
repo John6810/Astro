@@ -1,19 +1,16 @@
 {
-  // Cloudflare Workers config — Worker entry + static-assets binding.
+  // Cloudflare config — static-assets serving.
   //
-  // The Worker (./worker/index.ts) implements minimal Accept-Language
-  // routing on `/` only (see that file for the full rationale). Every
-  // other request falls through to the ASSETS binding which serves the
-  // Astro build output unchanged.
+  // The CF project is provisioned as Pages. Accept-Language redirect on `/`
+  // is implemented as a Pages Function in functions/_middleware.ts (the
+  // platform picks it up automatically, no wrangler config needed).
   //
-  // We keep `output: "static"` in Astro — the Worker does NOT do SSR.
-  // Docs: https://developers.cloudflare.com/workers/static-assets/
+  // This file is kept minimal so wrangler-driven local previews still work.
+  // Docs: https://developers.cloudflare.com/pages/functions/
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "jonathan-aerts-dev",
   "compatibility_date": "2025-05-01",
-  "main": "./worker/index.ts",
   "assets": {
     "directory": "./dist",
-    "binding": "ASSETS",
   },
 }
