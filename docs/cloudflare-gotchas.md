@@ -121,24 +121,37 @@ config seems wrong.
 
 CF Workers Builds publishes each branch as
 `<branch-slug>-<worker-name>.<account-subdomain>.workers.dev`. The
-slug is derived from the branch name with these rules:
+slug is derived from the branch name with these rules
+(**empirically verified**, not documented — verified against this
+account on 2026-05-17):
 
 - Lowercase
 - `/` → `-` (so `feat/foo` → `feat-foo`)
 - Non-alphanumeric → `-`
-- Truncated to **28 characters**
 - Trailing `-` trimmed
+- **Capped at 57 characters** for the branch portion. The cap comes
+  from the DNS label limit (63 chars) minus the `-<worker-name>`
+  suffix the platform appends. For our Worker (`astro`, 5 chars)
+  the budget is 63 − 6 = 57.
+
+**A false start to avoid**: earlier PR #37 e2e runs assumed a
+truncation at 28 chars based on a stale CF docs note. Branches
+longer than 28 chars but shorter than 57 (like
+`feat/observability-csp-version-drift`) round-tripped through that
+rule into a slug that CF never published, so the entire e2e suite
+404'd. The 57-char rule is the working one.
 
 **Beware of collisions**: two branches that differ only beyond the
-28-char truncation point will share the same preview URL. Example:
+57-char truncation point will share the same preview URL. Example:
 
-- `feat/big-refactor-of-locale-routing-edge-cases` →
-  `feat-big-refactor-of-locale-` (28 chars)
-- `feat/big-refactor-of-locale-routing-tests` →
-  `feat-big-refactor-of-locale-` (28 chars, same!)
+- `feat/big-refactor-of-locale-routing-edge-cases-and-more-tests` →
+  `feat-big-refactor-of-locale-routing-edge-cases-and-more-t` (57)
+- `feat/big-refactor-of-locale-routing-edge-cases-and-more-bugs` →
+  `feat-big-refactor-of-locale-routing-edge-cases-and-more-b` (57)
 
-The second push **overwrites** the first preview. CF doesn't warn.
-Rename to something shorter or use commit-version URLs
+(Same first 56 chars, different 57th → different slugs; but a
+57-char-and-longer branch that varies only at position 58+ would
+collide.) Rename to something shorter or use commit-version URLs
 (`<version-id>-<worker>.<subdomain>.workers.dev`) when this matters.
 
 The CI workflow mirrors this sanitisation in its

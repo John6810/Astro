@@ -173,14 +173,22 @@ jobs:
           if [ "$BRANCH" = "main" ]; then
             URL="https://jonathan-aerts.dev"
           else
-            # CF branch-alias slug: lowercase, `/` → `-`, strip other
-            # non-alphanumeric chars (CF replaces them with `-` too).
-            # Capped at 28 chars — CF truncates longer slugs.
+            # CF branch-alias slug rules (empirically verified on this
+            # account):
+            #   - lowercase
+            #   - `/` → `-`
+            #   - strip other non-alphanumeric chars (CF replaces them
+            #     with `-` too)
+            #   - capped at 57 chars (the DNS label limit is 63 chars,
+            #     and CF appends `-<worker-name>` = `-astro` = 6 chars,
+            #     leaving 57 for the branch portion). Earlier guesses
+            #     of "28 chars" were wrong — see PR #37's e2e failure.
+            #   - trailing `-` trimmed (CF does the same)
             SLUG=$(printf '%s' "$BRANCH" \
               | tr '[:upper:]' '[:lower:]' \
               | tr '/' '-' \
               | sed 's/[^a-z0-9-]/-/g' \
-              | cut -c1-28 \
+              | cut -c1-57 \
               | sed 's/-*$//')
             URL="https://${SLUG}-astro.aerts-jonathan.workers.dev"
           fi
