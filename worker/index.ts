@@ -23,6 +23,9 @@
 // worker/security-headers.ts for the strategy. The locale-routing
 // branches keep their own Vary / Cache-Control / Location intact;
 // applySecurityHeaders only merges new keys.
+//
+// Custom request metrics are emitted to the ANALYTICS binding on every
+// branch — see worker/analytics.ts and docs/analytics-queries.md.
 
 import {
   applySecurityHeaders,
@@ -31,9 +34,17 @@ import {
   rewriteHtmlWithNonce,
 } from "./security-headers";
 import { handleCspReport, isCspReportRequest } from "./csp-report";
+import {
+  classifyUserAgent,
+  localeFromPath,
+  recordRequest,
+  type AnalyticsLocale,
+  type EventType,
+} from "./analytics";
 
 export interface Env {
   ASSETS: Fetcher;
+  ANALYTICS?: AnalyticsEngineDataset;
 }
 
 /**
@@ -50,6 +61,25 @@ function secureResponse(response: Response, request: Request): Response {
   const nonce = generateNonce();
   const rewritten = rewriteHtmlWithNonce(response, nonce);
   return applySecurityHeaders(rewritten, request, nonce);
+}
+
+/**
+ * Fire-and-forget analytics write. Wraps recordRequest in a resolved
+ * Promise so ctx.waitUntil can hold the event loop just long enough
+ * for the runtime to flush the datapoint without blocking the
+ * response. writeDataPoint is synchronous + non-blocking on CF, so
+ * this is mostly a contract marker that "this work is allowed to
+ * outlive the response".
+ */
+function emitMetric(
+  ctx: ExecutionContext,
+  dataset: AnalyticsEngineDataset | undefined,
+  event: EventType,
+  locale: AnalyticsLocale,
+  ua: string
+): void {
+  if (!dataset) return;
+  ctx.waitUntil(Promise.resolve(recordRequest(dataset, event, locale, classifyUserAgent(ua))));
 }
 
 const BOT_UA =
@@ -101,12 +131,15 @@ function readLangCookie(cookieHeader: string | null): Locale | undefined {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const ua = request.headers.get("user-agent") ?? "";
 
     // CSP violation reports — handled BEFORE locale routing. This path
     // is intentionally NOT served from dist/, MUST NOT carry Vary, and
-    // MUST NOT trigger the Accept-Language redirect. See worker/csp-report.ts.
+    // MUST NOT trigger the Accept-Language redirect. Also explicitly
+    // NOT instrumented for analytics — CSP reports are already logged
+    // and counting them in the request metrics would noise the dataset.
     if (isCspReportRequest(request, url)) {
       return handleCspReport(request);
     }
@@ -116,15 +149,17 @@ export default {
     // through to the static asset binding with its own headers — no Vary
     // contamination, no extra logic. Security headers are still applied.
     if (url.pathname !== "/") {
-      return secureResponse(await env.ASSETS.fetch(request), request);
+      const response = await env.ASSETS.fetch(request);
+      const event: EventType = response.status === 404 ? "404" : "direct_serve";
+      emitMetric(ctx, env.ANALYTICS, event, localeFromPath(url.pathname), ua);
+      return secureResponse(response, request);
     }
-
-    const ua = request.headers.get("user-agent") ?? "";
 
     // Bots: never redirect. Serve the EN body directly so crawlers ingest
     // English content deterministically without following 302s, and without
     // leaking locale negotiation into their caching.
     if (BOT_UA.test(ua)) {
+      emitMetric(ctx, env.ANALYTICS, "bot_bypass", "en", ua);
       return secureResponse(await env.ASSETS.fetch(request), request);
     }
 
@@ -151,6 +186,7 @@ export default {
           "Cache-Control": "no-cache",
         },
       });
+      emitMetric(ctx, env.ANALYTICS, "redirect_locale", chosen, ua);
       return applySecurityHeaders(redirect, request);
     }
 
@@ -165,6 +201,7 @@ export default {
       headers: new Headers(upstream.headers),
     });
     withVary.headers.set("Vary", "Accept-Language, Cookie");
+    emitMetric(ctx, env.ANALYTICS, "direct_serve", "en", ua);
     return secureResponse(withVary, request);
   },
 };

@@ -36,4 +36,14 @@
     "enabled": true,
     "head_sampling_rate": 1,
   },
+  // Custom request metrics written via env.ANALYTICS.writeDataPoint().
+  // Dataset name is queryable via SQL (`SELECT … FROM astro_metrics`).
+  // Free tier covers 10M datapoints / month; at ~1 datapoint per request
+  // this is well clear of any realistic portfolio traffic.
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "astro_metrics",
+    },
+  ],
 }
