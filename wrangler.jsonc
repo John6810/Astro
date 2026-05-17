@@ -21,7 +21,7 @@
   //   https://developers.cloudflare.com/pages/functions/
   //   https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "jonathan-aerts-dev",
+  "name": "astro",
   "compatibility_date": "2026-05-17",
   "assets": {
     "directory": "./dist/",
