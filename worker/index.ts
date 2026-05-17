@@ -18,9 +18,37 @@
 // `Vary: Accept-Language, Cookie` is attached ONLY to responses for `/`
 // so the CDN can keep cached variants separate without poisoning every
 // static asset's cache.
+//
+// Security headers + CSP are layered on top of every branch — see
+// worker/security-headers.ts for the strategy. The locale-routing
+// branches keep their own Vary / Cache-Control / Location intact;
+// applySecurityHeaders only merges new keys.
+
+import {
+  applySecurityHeaders,
+  generateNonce,
+  isHtmlResponse,
+  rewriteHtmlWithNonce,
+} from "./security-headers";
 
 export interface Env {
   ASSETS: Fetcher;
+}
+
+/**
+ * For any response coming back from env.ASSETS.fetch (or our own
+ * Response objects), attach the static security headers and — if the
+ * body is HTML — stream it through HTMLRewriter to stamp a CSP nonce
+ * on every <script>/<style> before sending the CSP header that
+ * mentions the same nonce.
+ */
+function secureResponse(response: Response, request: Request): Response {
+  if (!isHtmlResponse(response)) {
+    return applySecurityHeaders(response, request);
+  }
+  const nonce = generateNonce();
+  const rewritten = rewriteHtmlWithNonce(response, nonce);
+  return applySecurityHeaders(rewritten, request, nonce);
 }
 
 const BOT_UA =
@@ -78,9 +106,9 @@ export default {
     // Only the root path participates in the negotiation. Every other URL
     // (assets, /fr/, /ja/, /blog/*, .md routes, sitemap, etc.) goes straight
     // through to the static asset binding with its own headers — no Vary
-    // contamination, no extra logic.
+    // contamination, no extra logic. Security headers are still applied.
     if (url.pathname !== "/") {
-      return env.ASSETS.fetch(request);
+      return secureResponse(await env.ASSETS.fetch(request), request);
     }
 
     const ua = request.headers.get("user-agent") ?? "";
@@ -89,7 +117,7 @@ export default {
     // English content deterministically without following 302s, and without
     // leaking locale negotiation into their caching.
     if (BOT_UA.test(ua)) {
-      return env.ASSETS.fetch(request);
+      return secureResponse(await env.ASSETS.fetch(request), request);
     }
 
     // Cookie wins over Accept-Language (it represents an explicit user
@@ -103,7 +131,10 @@ export default {
 
     if (chosen !== DEFAULT_LOCALE) {
       const location = new URL(`/${chosen}/`, url.origin).toString();
-      return new Response(null, {
+      // 302 has no body, so no CSP nonce needed — apply only the static
+      // security headers. Existing Location / Vary / Cache-Control are
+      // preserved by applySecurityHeaders (merge, not overwrite).
+      const redirect = new Response(null, {
         status: 302,
         headers: {
           Location: location,
@@ -112,17 +143,20 @@ export default {
           "Cache-Control": "no-cache",
         },
       });
+      return applySecurityHeaders(redirect, request);
     }
 
     // Serve EN body via the static asset, then mark Vary so the CDN keeps
-    // language variants separate. The body is otherwise unmodified.
+    // language variants separate. The HTML body still flows through
+    // HTMLRewriter inside secureResponse to receive the per-request CSP
+    // nonce — Vary set here is preserved by applySecurityHeaders.
     const upstream = await env.ASSETS.fetch(request);
-    const headers = new Headers(upstream.headers);
-    headers.set("Vary", "Accept-Language, Cookie");
-    return new Response(upstream.body, {
+    const withVary = new Response(upstream.body, {
       status: upstream.status,
       statusText: upstream.statusText,
-      headers,
+      headers: new Headers(upstream.headers),
     });
+    withVary.headers.set("Vary", "Accept-Language, Cookie");
+    return secureResponse(withVary, request);
   },
 };
