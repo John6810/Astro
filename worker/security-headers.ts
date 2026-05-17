@@ -79,11 +79,28 @@ export function generateNonce(): string {
 export function buildCsp(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://gc.zgo.at`,
+    // script-src allowlist:
+    //   - `'self'` + `'nonce-${nonce}'` + `'strict-dynamic'` — primary,
+    //     CSP3 strategy for Astro hydration islands.
+    //   - `https://gc.zgo.at` — GoatCounter traffic beacon.
+    //   - `https://static.cloudflareinsights.com` — CF Web Analytics
+    //     (RUM) beacon. Modern browsers ignore this entry once
+    //     'strict-dynamic' is in play, but it's the fallback for
+    //     CSP2-only User-Agents and for any environment where the
+    //     beacon <script> tag fails to receive the per-request nonce
+    //     attribute (HTMLRewriter race conditions, etc).
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://gc.zgo.at https://static.cloudflareinsights.com`,
     `style-src 'self' 'nonce-${nonce}'`,
     "img-src 'self' data: https:",
     "font-src 'self'",
-    "connect-src 'self' https://*.goatcounter.com",
+    // connect-src allowlist:
+    //   - `'self'` — own fetches, including /csp-report.
+    //   - `https://*.goatcounter.com` — GoatCounter ingest.
+    //   - `https://cloudflareinsights.com` — CF Web Analytics POSTs
+    //     RUM metrics to `https://cloudflareinsights.com/cdn-cgi/rum`.
+    //     Note the apex, NOT the `static.` subdomain (different host
+    //     for delivery vs ingest).
+    "connect-src 'self' https://*.goatcounter.com https://cloudflareinsights.com",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",

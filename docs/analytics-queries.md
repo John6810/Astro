@@ -32,28 +32,32 @@ per event type**. Querier must discriminate via `blob1` (also
 mirrored to `index1` for partition pruning) before interpreting
 `blob2`/`blob3`.
 
-| Column                       | Always                                                                      | Cardinality |
-| ---------------------------- | --------------------------------------------------------------------------- | ----------- |
-| `blob1` (alias `event_type`) | `redirect_locale` / `direct_serve` / `bot_bypass` / `404` / `csp_violation` | 5           |
-| `double1` (alias `count`)    | always `1` — multiply by `_sample_interval` before summing                  | 1           |
-| `index1`                     | mirrors `blob1` for cheap partition pruning                                 | 5           |
-| `timestamp`                  | auto-populated                                                              | —           |
-| `_sample_interval`           | weight for sampled rows (see above)                                         | —           |
+| Column                    | Always                                                     | Cardinality |
+| ------------------------- | ---------------------------------------------------------- | ----------- |
+| `blob1`                   | event-discriminator (varies — see below)                   | 6           |
+| `double1` (alias `count`) | always `1` — multiply by `_sample_interval` before summing | 1           |
+| `index1`                  | partition tag (varies — see below)                         | 6           |
+| `timestamp`               | auto-populated                                             | —           |
+| `_sample_interval`        | weight for sampled rows (see above)                        | —           |
 
-Per-event semantics for `blob2` and `blob3`:
+Per-event semantics for `blob1` / `blob2` / `blob3` / `index1`:
 
-| `blob1` (event_type) | `blob2`                                                 | `blob3`                                                                               |
-| -------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `redirect_locale`    | `locale` (`en` / `fr` / `ja` / `unknown`)               | `user_agent_class` (`human` / `bot_ai` / `bot_search` / `unknown`)                    |
-| `direct_serve`       | same as above                                           | same as above                                                                         |
-| `bot_bypass`         | `en` (fixed — bots only see EN body)                    | `user_agent_class` (`bot_ai` / `bot_search` is the expected value)                    |
-| `404`                | `locale`                                                | `user_agent_class`                                                                    |
-| `csp_violation`      | `directive` (e.g. `script-src`, `style-src`, `unknown`) | `blocked_domain` (bare hostname, or scheme like `data:` / `inline`, or `unparseable`) |
+| Event family   | `blob1`                                                   | `blob2`                                   | `blob3`                                                                               | `index1`        |
+| -------------- | --------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------- | --------------- |
+| Request events | `redirect_locale` / `direct_serve` / `bot_bypass` / `404` | `locale` (`en` / `fr` / `ja` / `unknown`) | `user_agent_class` (`human` / `bot_ai` / `bot_search` / `unknown`)                    | mirrors `blob1` |
+| CSP violations | `csp_violation`                                           | `directive` (e.g. `script-src`)           | `blocked_domain` (bare hostname, or scheme like `data:` / `inline`, or `unparseable`) | `csp_violation` |
+| Cache outcomes | `cache_status` value (`hit` / `miss` / `bypass`)          | `locale` (`en` / `fr` / `ja`)             | `route` (`/` / `/fr/` / `/ja/`)                                                       | `cache`         |
+
+The cache family is the **third schema variant** and the one place
+where `index1` is a category tag rather than a mirror of `blob1`. The
+trade-off: a single `WHERE index1 = 'cache'` partition prune pulls
+all cache rows regardless of outcome, which makes hit-ratio queries
+cheaper than splitting on `blob1`.
 
 **Producer side**: see [`worker/analytics.ts`](../worker/analytics.ts)
-(`recordRequest` and `recordCspViolation`). The two functions write
-to the same dataset; the schema overload is the trade-off for keeping
-the binding count at one.
+(`recordRequest`, `recordCspViolation`, `recordCacheStatus`). All
+three functions write to the same dataset; the schema overload is
+the trade-off for keeping the binding count at one.
 
 For how to run these queries (CF Dashboard, HTTP API, or Grafana),
 see Cloudflare's
@@ -283,6 +287,75 @@ WHERE
 GROUP BY day
 ORDER BY day
 ```
+
+## Queries — cache outcomes
+
+Rows in this section all share `index1 = 'cache'`. `blob1` carries
+the cache outcome (`hit` / `miss` / `bypass`), `blob2` the locale,
+`blob3` the route. Don't expect `blob1` to be a stable event_type
+here — that convention only applies to the request and CSP
+families.
+
+### Cache hit ratio per route, last 7 days
+
+```sql
+SELECT
+  blob3 AS route,
+  blob1 AS cache_status,
+  SUM(_sample_interval * double1) AS hits
+FROM astro_metrics
+WHERE
+  index1 = 'cache'
+  AND timestamp >= NOW() - INTERVAL '7' DAY
+GROUP BY route, cache_status
+ORDER BY route, hits DESC
+```
+
+Reading the result: for each route, the rows in `cache_status` order
+give the absolute count of HIT / MISS / BYPASS responses. Hit ratio
+is `hit / (hit + miss)`; bypass count is independent (bots).
+
+### Daily cache hit ratio on /, last 14 days
+
+```sql
+SELECT
+  toStartOfDay(timestamp) AS day,
+  SUM(_sample_interval * double1 * CASE WHEN blob1 = 'hit' THEN 1 ELSE 0 END) AS hits,
+  SUM(_sample_interval * double1 * CASE WHEN blob1 = 'miss' THEN 1 ELSE 0 END) AS misses
+FROM astro_metrics
+WHERE
+  index1 = 'cache'
+  AND blob3 = '/'
+  AND blob1 IN ('hit', 'miss')
+  AND timestamp >= NOW() - INTERVAL '14' DAY
+GROUP BY day
+ORDER BY day
+```
+
+If the hit ratio drops sharply after a deploy: the COMMIT_SHA-based
+cache salt rotated the namespace as intended, and the first ~5 min
+of post-deploy traffic legitimately misses while the colo warms up.
+Drops that persist beyond ~10 min suggest the cache TTL is
+mismatched (or — worst case — the worker is rejecting its own
+writes somehow).
+
+### Bot bypass rate, last 30 days
+
+```sql
+SELECT
+  blob3 AS route,
+  SUM(_sample_interval * double1) AS bypasses
+FROM astro_metrics
+WHERE
+  index1 = 'cache'
+  AND blob1 = 'bypass'
+  AND timestamp >= NOW() - INTERVAL '30' DAY
+GROUP BY route
+ORDER BY bypasses DESC
+```
+
+Useful for the "how much of `/` traffic is bot scrapes?" question —
+the bypass row is exactly that.
 
 ## Smoke check — datapoints landed in the last 5 min
 

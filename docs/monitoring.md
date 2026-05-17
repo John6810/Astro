@@ -58,19 +58,20 @@ For each row below, in the Better Stack dashboard:
    - Severity: **high** for #1–#8 and #11, **paging** for #9 and #10
      (security observability)
 
-| #   | Name                | URL                                               | Method | Request headers                            | Expect status | Body / header assertion                                                                                                       |
-| --- | ------------------- | ------------------------------------------------- | ------ | ------------------------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `loc-redirect-fr`   | `https://jonathan-aerts.dev/`                     | `GET`  | `Accept-Language: fr-BE,fr;q=0.9,en;q=0.5` | `302`         | Header `Location` equals `https://jonathan-aerts.dev/fr/`                                                                     |
-| 2   | `loc-redirect-ja`   | `https://jonathan-aerts.dev/`                     | `GET`  | `Accept-Language: ja-JP,ja;q=0.9`          | `302`         | Header `Location` equals `https://jonathan-aerts.dev/ja/`                                                                     |
-| 3   | `loc-en-direct`     | `https://jonathan-aerts.dev/`                     | `GET`  | `Accept-Language: en-US,en;q=0.9`          | `200`         | Body contains `lang="en"`                                                                                                     |
-| 4   | `bot-bypass-claude` | `https://jonathan-aerts.dev/`                     | `GET`  | `User-Agent: ClaudeBot/1.0`                | `200`         | Header `Location` **absent**                                                                                                  |
-| 5   | `locale-fr-page`    | `https://jonathan-aerts.dev/fr/`                  | `GET`  | _(none)_                                   | `200`         | Body contains `lang="fr"` AND header `Vary` absent                                                                            |
-| 6   | `locale-ja-page`    | `https://jonathan-aerts.dev/ja/`                  | `GET`  | _(none)_                                   | `200`         | Body contains `lang="ja"`                                                                                                     |
-| 7   | `sitemap-coverage`  | `https://jonathan-aerts.dev/sitemap-index.xml`    | `GET`  | _(none)_                                   | `200`         | Body contains all three: `https://jonathan-aerts.dev/`, `https://jonathan-aerts.dev/fr/`, `https://jonathan-aerts.dev/ja/`    |
-| 8   | `404-handling`      | `https://jonathan-aerts.dev/nonexistent-path-zzz` | `GET`  | _(none)_                                   | `404`         | Body contains `Page not found`                                                                                                |
-| 9   | `csp-header-shape`  | `https://jonathan-aerts.dev/`                     | `GET`  | _(none)_                                   | `200`         | Header `Content-Security-Policy` contains ALL of: `nonce-`, `'strict-dynamic'`, `object-src 'none'`, `report-to csp-endpoint` |
-| 10  | `csp-report-ingest` | `https://jonathan-aerts.dev/csp-report`           | `POST` | `Content-Type: application/csp-report`     | `204`         | _(no body assertion — 204 has no body; see POST body below)_                                                                  |
-| 11  | `version-endpoint`  | `https://jonathan-aerts.dev/version`              | `GET`  | _(none)_                                   | `200`         | Response is JSON with non-empty `.sha` (40 hex chars OR `"dev"`) and ISO-8601 `.builtAt`                                      |
+| #   | Name                | URL                                                   | Method | Request headers                            | Expect status | Body / header assertion                                                                                                       |
+| --- | ------------------- | ----------------------------------------------------- | ------ | ------------------------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `loc-redirect-fr`   | `https://jonathan-aerts.dev/`                         | `GET`  | `Accept-Language: fr-BE,fr;q=0.9,en;q=0.5` | `302`         | Header `Location` equals `https://jonathan-aerts.dev/fr/`                                                                     |
+| 2   | `loc-redirect-ja`   | `https://jonathan-aerts.dev/`                         | `GET`  | `Accept-Language: ja-JP,ja;q=0.9`          | `302`         | Header `Location` equals `https://jonathan-aerts.dev/ja/`                                                                     |
+| 3   | `loc-en-direct`     | `https://jonathan-aerts.dev/`                         | `GET`  | `Accept-Language: en-US,en;q=0.9`          | `200`         | Body contains `lang="en"`                                                                                                     |
+| 4   | `bot-bypass-claude` | `https://jonathan-aerts.dev/`                         | `GET`  | `User-Agent: ClaudeBot/1.0`                | `200`         | Header `Location` **absent**                                                                                                  |
+| 5   | `locale-fr-page`    | `https://jonathan-aerts.dev/fr/`                      | `GET`  | _(none)_                                   | `200`         | Body contains `lang="fr"` AND header `Vary` absent                                                                            |
+| 6   | `locale-ja-page`    | `https://jonathan-aerts.dev/ja/`                      | `GET`  | _(none)_                                   | `200`         | Body contains `lang="ja"`                                                                                                     |
+| 7   | `sitemap-coverage`  | `https://jonathan-aerts.dev/sitemap-index.xml`        | `GET`  | _(none)_                                   | `200`         | Body contains all three: `https://jonathan-aerts.dev/`, `https://jonathan-aerts.dev/fr/`, `https://jonathan-aerts.dev/ja/`    |
+| 8   | `404-handling`      | `https://jonathan-aerts.dev/nonexistent-path-zzz`     | `GET`  | _(none)_                                   | `404`         | Body contains `Page not found`                                                                                                |
+| 9   | `csp-header-shape`  | `https://jonathan-aerts.dev/`                         | `GET`  | _(none)_                                   | `200`         | Header `Content-Security-Policy` contains ALL of: `nonce-`, `'strict-dynamic'`, `object-src 'none'`, `report-to csp-endpoint` |
+| 10  | `csp-report-ingest` | `https://jonathan-aerts.dev/csp-report`               | `POST` | `Content-Type: application/csp-report`     | `204`         | _(no body assertion — 204 has no body; see POST body below)_                                                                  |
+| 11  | `version-endpoint`  | `https://jonathan-aerts.dev/version`                  | `GET`  | _(none)_                                   | `200`         | Response is JSON with non-empty `.sha` (40 hex chars OR `"dev"`) and ISO-8601 `.builtAt`                                      |
+| 12  | `cf-rum-beacon`     | `https://static.cloudflareinsights.com/beacon.min.js` | `GET`  | _(none)_                                   | `200`         | Body length > 0 (just a liveness probe — we don't pin a hash since CF auto-updates the beacon)                                |
 
 ### Per-monitor configuration notes
 
@@ -122,6 +123,15 @@ Stack still tells us that `/version` is reachable and returning a
 parseable response. The body assertion is loose — a `.sha` that
 matches the regex `^[a-f0-9]{40}$|^dev$` — because the drift
 workflow handles the comparison logic.
+
+**Monitor #12 — CF Web Analytics beacon** (severity: warning, every 5 min)
+RUM observability surface. If CF takes the beacon down at the
+edge (rare but documented historically) or we accidentally break
+the CSP allowance for `static.cloudflareinsights.com`, monitor #12
+catches it before we lose days of Core Web Vitals data silently.
+The probe checks the public CDN URL directly (NOT through our
+own origin), so it's independent of our worker — a fault in either
+layer trips a separate signal.
 
 ### Tip: bulk import
 

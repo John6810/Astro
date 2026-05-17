@@ -10,3 +10,4 @@ sitemap-coverage,https://jonathan-aerts.dev/sitemap-index.xml,GET,,,200,"https:/
 csp-header-shape,https://jonathan-aerts.dev/,GET,,,200,,"Content-Security-Policy CONTAINS_ALL: nonce-; 'strict-dynamic'; object-src 'none'; report-to csp-endpoint",5,all,2,1,paging
 csp-report-ingest,https://jonathan-aerts.dev/csp-report,POST,Content-Type: application/csp-report,"{""csp-report"":{""document-uri"":""https://jonathan-aerts.dev/"",""violated-directive"":""script-src"",""blocked-uri"":""https://example.com/synthetic-monitor-probe.js"",""disposition"":""enforce""}}",204,,,5,all,2,1,paging
 version-endpoint,https://jonathan-aerts.dev/version,GET,,,200,"""worker"":""astro""","Content-Type CONTAINS: application/json",3,all,2,1,warning
+cf-rum-beacon,https://static.cloudflareinsights.com/beacon.min.js,GET,,,200,,Content-Length >0,5,all,2,1,warning

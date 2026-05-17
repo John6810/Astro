@@ -10,9 +10,23 @@ regex = '''(?i)(cloudflare|cf)[\w-]*(token|api)[\w-]*[=:]\s*["']?[a-zA-Z0-9_-]{4
 tags = ["cloudflare", "credentials"]
 
 [allowlist]
+description = "Public identifiers that are not secrets"
 paths = [
   '''pnpm-lock\.yaml''',
   '''package-lock\.json''',
   '''dist/.*''',
   '''.astro/.*''',
+]
+# Cloudflare Web Analytics tokens are public site-scoped identifiers
+# (same trust model as a GoatCounter site code) — they appear in
+# every served HTML and are designed to be embedded client-side.
+# The generic-api-key rule misclassifies them as secrets. We
+# allowlist the two specific public values that appear in source:
+#   - Site Token (beacon)  → embedded in BaseHead.astro
+#   - Site Tag             → documented in observability.md for
+#                            future Grafana / API queries
+# If either value rotates, update both the source and this list.
+regexes = [
+  '''f267155885aa4991a341b833c47a3c08''',
+  '''f880029bd2454d1b928a4e3b2f12416b''',
 ]

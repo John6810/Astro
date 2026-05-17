@@ -185,3 +185,47 @@ export function recordCspViolation(
     // Same defensive contract as recordRequest.
   }
 }
+
+/**
+ * Edge cache outcomes (Workers Cache API) for the three SSR routes.
+ * Lowercase on the wire so SQL queries don't need to coerce — the
+ * `x-cache` response header uses the conventional uppercase form
+ * (HIT/MISS/BYPASS), which the index.ts wiring lowercases before
+ * calling this function.
+ */
+export type CacheStatusLabel = "hit" | "miss" | "bypass";
+
+/**
+ * Write a cache-outcome datapoint.
+ *
+ * Schema overload (third variant — see docs/analytics-queries.md
+ * for the full per-event table):
+ *   blob1 = `cache_status` (`hit` / `miss` / `bypass`)
+ *   blob2 = `locale`       (`en` / `fr` / `ja`)
+ *   blob3 = `route`        (`/`, `/fr/`, `/ja/`)
+ *   indexes = ["cache"]    (does NOT mirror blob1 — this is the one
+ *                           place where the index1 partition is a
+ *                           per-event-category tag rather than the
+ *                           event type itself, so a single query can
+ *                           pull all cache rows regardless of outcome)
+ *
+ * Cardinality: 3 statuses × 3 locales × 3 routes = 27 distinct
+ * dimension combinations, well below any AE budget.
+ */
+export function recordCacheStatus(
+  dataset: AnalyticsEngineDataset | undefined,
+  status: CacheStatusLabel,
+  locale: AnalyticsLocale,
+  route: string
+): void {
+  if (!dataset) return;
+  try {
+    dataset.writeDataPoint({
+      blobs: [status, locale, route],
+      doubles: [1],
+      indexes: ["cache"],
+    });
+  } catch {
+    // Cache instrumentation must never break a request.
+  }
+}

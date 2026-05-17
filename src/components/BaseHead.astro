@@ -60,6 +60,23 @@ const personUrl = siteOrigin
   ? `${siteOrigin}${import.meta.env.BASE_URL.replace(/\/+$/, "")}/`
   : "/";
 const personImage = `${siteOrigin}${withBase("/images/avatar.jpg")}`;
+
+// Cloudflare Web Analytics RUM beacon. The token is a PUBLIC
+// identifier — CF Web Analytics deliberately uses a non-secret
+// site-scoped identifier (same model as a GoatCounter site code).
+// It appears in every served HTML and is bound to the
+// jonathan-aerts.dev property; rotation requires explicit action
+// in the CF dashboard.
+//
+// Default is hardcoded so every build (local, CI, CF Workers Build)
+// emits the beacon without any setup. Override via
+// `PUBLIC_CF_WA_TOKEN=<other>` at build time — useful for staging or
+// for an account-rotation. Setting it to the empty string disables
+// the beacon (graceful absence, no client error). See
+// docs/observability.md for the dashboard walkthrough.
+const DEFAULT_CF_WA_TOKEN = "f267155885aa4991a341b833c47a3c08";
+const envToken = import.meta.env.PUBLIC_CF_WA_TOKEN;
+const cfWebAnalyticsToken = envToken === undefined ? DEFAULT_CF_WA_TOKEN : envToken;
 ---
 
 <meta charset="UTF-8" />
@@ -232,6 +249,24 @@ const personImage = `${siteOrigin}${withBase("/images/avatar.jpg")}`;
 />
 
 <title>{resolvedTitle}</title>
+
+{
+  /* Cloudflare Web Analytics — Core Web Vitals + traffic RUM.
+   * `spa: false` because this is an MPA: every navigation is a fresh
+   * document load and the beacon should re-evaluate. HTMLRewriter in
+   * the Worker will stamp this <script> with the per-request CSP
+   * nonce; the CSP allowlist in worker/security-headers.ts authorises
+   * the `static.cloudflareinsights.com` host so even if the nonce
+   * propagation via `'strict-dynamic'` were ever to drop, the
+   * fallback still works. */
+  cfWebAnalyticsToken && (
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon={JSON.stringify({ token: cfWebAnalyticsToken, spa: false })}
+    />
+  )
+}
 
 <!-- Inter v3 self-hosted: define @font-face here so the URL respects `base` -->
 <style is:global define:vars={{ interFontUrl: `url("${interFontUrl}")` }}>

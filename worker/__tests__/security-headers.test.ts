@@ -118,6 +118,25 @@ describe("CSP shape", () => {
     expect(reporting).toContain("csp-endpoint=");
     expect(reporting).toContain("/csp-report");
   });
+
+  // CF Web Analytics allowances. The beacon source lives at
+  // static.cloudflareinsights.com; its ingest POSTs land at
+  // cloudflareinsights.com/cdn-cgi/rum. Both need explicit allowance
+  // for the CSP3 'strict-dynamic' fallback path (CSP2-only browsers,
+  // race conditions where HTMLRewriter misses the tag).
+  it("script-src allowlists https://static.cloudflareinsights.com", async () => {
+    const res = await fetchPath("/");
+    const csp = res.headers.get("content-security-policy") ?? "";
+    const scriptSrc = csp.split(";").find((d) => d.trim().startsWith("script-src ")) ?? "";
+    expect(scriptSrc).toContain("https://static.cloudflareinsights.com");
+  });
+
+  it("connect-src allowlists https://cloudflareinsights.com (RUM ingest)", async () => {
+    const res = await fetchPath("/");
+    const csp = res.headers.get("content-security-policy") ?? "";
+    const connectSrc = csp.split(";").find((d) => d.trim().startsWith("connect-src ")) ?? "";
+    expect(connectSrc).toContain("https://cloudflareinsights.com");
+  });
 });
 
 describe("nonce uniqueness + body integrity", () => {

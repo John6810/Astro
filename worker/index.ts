@@ -24,6 +24,13 @@
 // branches keep their own Vary / Cache-Control / Location intact;
 // applySecurityHeaders only merges new keys.
 //
+// Edge caching is layered on top of the three SSR routes (`/`,
+// `/fr/`, `/ja/`) via worker/cache.ts. The cache stores the bare
+// HTML body and replays it on hit; the per-request CSP nonce is
+// stamped by HTMLRewriter on EVERY request (hit OR miss), so cache
+// correctness and CSP correctness are decoupled. Bot bypass and
+// 302 redirects deliberately skip the cache.
+//
 // Custom request metrics are emitted to the ANALYTICS binding on every
 // branch — see worker/analytics.ts and docs/analytics-queries.md.
 
@@ -37,10 +44,18 @@ import { handleCspReport, isCspReportRequest } from "./csp-report";
 import {
   classifyUserAgent,
   localeFromPath,
+  recordCacheStatus,
   recordRequest,
   type AnalyticsLocale,
+  type CacheStatusLabel,
   type EventType,
 } from "./analytics";
+import {
+  fetchThroughCache,
+  isCacheableSsrPath,
+  withCacheStatusHeader,
+  type CacheStatus,
+} from "./cache";
 import { buildVersionResponse, isVersionRequest } from "./version";
 
 export interface Env {
@@ -81,6 +96,24 @@ function emitMetric(
 ): void {
   if (!dataset) return;
   ctx.waitUntil(Promise.resolve(recordRequest(dataset, event, locale, classifyUserAgent(ua))));
+}
+
+/**
+ * Fire-and-forget cache-outcome event. Pulled out so the cache
+ * status from worker/cache.ts (uppercase wire-format) maps cleanly
+ * to the lowercase Analytics Engine convention without callers
+ * needing to do the conversion themselves.
+ */
+function emitCacheStatus(
+  ctx: ExecutionContext,
+  dataset: AnalyticsEngineDataset | undefined,
+  status: CacheStatus,
+  locale: AnalyticsLocale,
+  route: string
+): void {
+  if (!dataset) return;
+  const wire = status.toLowerCase() as CacheStatusLabel;
+  ctx.waitUntil(Promise.resolve(recordCacheStatus(dataset, wire, locale, route)));
 }
 
 /**
@@ -178,16 +211,34 @@ export default {
       return applySecurityHeaders(buildVersionResponse(), request);
     }
 
-    // Only the root path participates in the negotiation. Every other URL
-    // (assets, /fr/, /ja/, /blog/*, .md routes, sitemap, etc.) goes straight
-    // through to the static asset binding with its own headers — no Vary
-    // contamination, no extra logic. Security headers are still applied.
+    // Non-root path branch. Splits into two:
+    //   (a) Cacheable SSR locale routes (`/fr/`, `/ja/`) — go through
+    //       the edge cache; emit both a request event and a cache event.
+    //   (b) Everything else (blog, sitemap, assets, fonts, etc.) —
+    //       passthrough to ASSETS, instrument only HTML responses.
     if (url.pathname !== "/") {
+      if (isCacheableSsrPath(url.pathname)) {
+        const { response, status: cacheStatus } = await fetchThroughCache(ctx, url, () =>
+          env.ASSETS.fetch(request)
+        );
+        const locale = localeFromPath(url.pathname);
+        // The locale-prefix paths (/fr/, /ja/) always return HTML —
+        // ASSETS serves their index.html. No need to gate on the
+        // body content-type; if for some reason it's not HTML the
+        // cache layer will refuse to store it and the request still
+        // works (no cache benefit, no breakage).
+        emitMetric(
+          ctx,
+          env.ANALYTICS,
+          response.status === 404 ? "404" : "direct_serve",
+          locale,
+          ua
+        );
+        emitCacheStatus(ctx, env.ANALYTICS, cacheStatus, locale, url.pathname);
+        return withCacheStatusHeader(secureResponse(response, request), cacheStatus);
+      }
+      // Non-cacheable non-root: blog, assets, sitemap, robots.txt, etc.
       const response = await env.ASSETS.fetch(request);
-      // Only HTML responses generate analytics datapoints. Images,
-      // fonts, CSS, JS, sitemap.xml, robots.txt etc. flow through
-      // unrecorded — they don't tell us anything about "did someone
-      // read a page", they just bloat the dataset.
       if (__isHtmlContentType(response)) {
         const event: EventType = response.status === 404 ? "404" : "direct_serve";
         emitMetric(ctx, env.ANALYTICS, event, localeFromPath(url.pathname), ua);
@@ -195,12 +246,16 @@ export default {
       return secureResponse(response, request);
     }
 
-    // Bots: never redirect. Serve the EN body directly so crawlers ingest
-    // English content deterministically without following 302s, and without
-    // leaking locale negotiation into their caching.
+    // From here we're on `/`. Bot bypass takes precedence — bots never
+    // redirect and never go through the cache. The cardinality of
+    // crawler UAs would dilute the cache (different UA strings might
+    // be served different content if we cached) and crawler traffic
+    // is rare enough that the SSR cost is irrelevant.
     if (BOT_UA.test(ua)) {
       emitMetric(ctx, env.ANALYTICS, "bot_bypass", "en", ua);
-      return secureResponse(await env.ASSETS.fetch(request), request);
+      emitCacheStatus(ctx, env.ANALYTICS, "BYPASS", "en", "/");
+      const response = secureResponse(await env.ASSETS.fetch(request), request);
+      return withCacheStatusHeader(response, "BYPASS");
     }
 
     // Cookie wins over Accept-Language (it represents an explicit user
@@ -217,6 +272,9 @@ export default {
       // 302 has no body, so no CSP nonce needed — apply only the static
       // security headers. Existing Location / Vary / Cache-Control are
       // preserved by applySecurityHeaders (merge, not overwrite).
+      // Redirects are NOT cached: compute cost is trivial and caching
+      // would have to fragment by Accept-Language anyway, defeating the
+      // point.
       const redirect = new Response(null, {
         status: 302,
         headers: {
@@ -230,18 +288,26 @@ export default {
       return applySecurityHeaders(redirect, request);
     }
 
-    // Serve EN body via the static asset, then mark Vary so the CDN keeps
-    // language variants separate. The HTML body still flows through
-    // HTMLRewriter inside secureResponse to receive the per-request CSP
-    // nonce — Vary set here is preserved by applySecurityHeaders.
-    const upstream = await env.ASSETS.fetch(request);
-    const withVary = new Response(upstream.body, {
-      status: upstream.status,
-      statusText: upstream.statusText,
-      headers: new Headers(upstream.headers),
+    // Default-locale `/` serve. This is the hot path: a human visitor
+    // with no cookie and an Accept-Language that picks EN (or none at
+    // all). We go through the cache here — the body is identical for
+    // every such visitor, only the CSP nonce varies.
+    const { response: cached, status: cacheStatus } = await fetchThroughCache(ctx, url, () =>
+      env.ASSETS.fetch(request)
+    );
+
+    // Vary is mandatory on `/` (browser-side caching correctness for
+    // the few clients that respect it). Set BEFORE secureResponse so
+    // applySecurityHeaders preserves it via the merge contract.
+    const withVary = new Response(cached.body, {
+      status: cached.status,
+      statusText: cached.statusText,
+      headers: new Headers(cached.headers),
     });
     withVary.headers.set("Vary", "Accept-Language, Cookie");
+
     emitMetric(ctx, env.ANALYTICS, "direct_serve", "en", ua);
-    return secureResponse(withVary, request);
+    emitCacheStatus(ctx, env.ANALYTICS, cacheStatus, "en", "/");
+    return withCacheStatusHeader(secureResponse(withVary, request), cacheStatus);
   },
 };

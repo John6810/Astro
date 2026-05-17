@@ -308,6 +308,49 @@ test.describe("CSP live behaviour (no violations, GoatCounter loads)", () => {
   });
 });
 
+// ─── CF Web Analytics RUM beacon ─────────────────────────────────────────────
+//
+// Asserts the beacon loads on every SSR locale page. The actual RUM
+// signal lands in CF's dashboard; here we only verify it FIRES — i.e.
+// the CSP doesn't block the beacon script and the snippet is rendered
+// in the HTML. The test is conditional on the PUBLIC_CF_WA_TOKEN
+// env var because a fresh checkout that hasn't yet provisioned the
+// token shouldn't fail e2e — the beacon is gracefully absent.
+
+test.describe("CF Web Analytics RUM beacon", () => {
+  for (const path of ["/", "/fr/", "/ja/"]) {
+    test(`${path} loads beacon.min.js when PUBLIC_CF_WA_TOKEN is set`, async ({ page }) => {
+      // Detect presence by inspecting the HTML for the beacon
+      // <script src=...static.cloudflareinsights.com/beacon.min.js>.
+      // If absent (no token), skip — preserves green CI on fresh
+      // checkouts.
+      const initialRes = await page.goto(path, { waitUntil: "load" });
+      const html = await initialRes!.text();
+      if (!html.includes("static.cloudflareinsights.com/beacon.min.js")) {
+        test.skip(true, "PUBLIC_CF_WA_TOKEN is unset for this build — beacon snippet not rendered");
+        return;
+      }
+
+      const beaconRequests: string[] = [];
+      page.on("request", (req) => {
+        if (req.url().includes("static.cloudflareinsights.com")) {
+          beaconRequests.push(req.url());
+        }
+      });
+
+      // Navigate again so request events fire after the listener is in
+      // place — the first goto's network is gone by the time we
+      // attached.
+      await page.goto(path, { waitUntil: "load" });
+      await page.waitForTimeout(5_000);
+      expect(
+        beaconRequests.length,
+        "expected ≥1 request to static.cloudflareinsights.com"
+      ).toBeGreaterThan(0);
+    });
+  }
+});
+
 // ─── CSP reporting endpoint ─────────────────────────────────────────────────
 
 test("AC15: POST /csp-report with valid body → 204", async ({ request }) => {

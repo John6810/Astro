@@ -178,6 +178,42 @@ compiles on a fresh `pnpm install` before any build step. CI
 regenerates it. **Do not delete the committed file** — `tsc` /
 `vitest` will both fail on an unresolved import otherwise.
 
+## 6. Workers Cache API survives deploys — bust it explicitly
+
+The Workers Cache API (`caches.default`) is the regional HTTP cache
+that lives in each CF colo. Its lifecycle is **not** tied to your
+Worker version:
+
+- A new deploy of the Worker code does NOT invalidate entries.
+- A deploy that changes the body of `dist/index.html` will still
+  serve the OLD body from the cache until the entries expire
+  (`s-maxage`).
+
+This is the opposite of what you might assume from the Workers
+dashboard, where Versions and Bindings rotate atomically. For the
+cache it's a footgun.
+
+**Fix**: include a build-time salt in the cache key. We use the
+first 7 chars of `COMMIT_SHA` (from
+[`worker/version.generated.ts`](../worker/version.generated.ts)) as
+a `_v=<sha7>` query param on the cache key Request. Each deploy
+gets a fresh `<sha7>`, so the namespace rotates and the first
+request after deploy is naturally a MISS that warms the new
+content. See [`worker/cache.ts`](../worker/cache.ts) `buildCacheKey`
+for the implementation.
+
+**Don't**: rely on `cache.delete()` from a `fetch` event after
+deploy — there's no signal to fire it from, and Workers can't
+enumerate cache keys to flush them. The salt strategy is the only
+robust pattern.
+
+**Symptom of skipping this**: visitors see stale content for up to
+`s-maxage` seconds after deploy, even though `wrangler deploy`
+returned success and `/version` immediately reports the new SHA.
+The drift-check workflow (see
+[`docs/monitoring.md`](./monitoring.md)) would NOT catch this
+because `/version` itself isn't cached.
+
 ## Cross-links
 
 - [`docs/monitoring.md`](./monitoring.md) — synthetic monitors,
