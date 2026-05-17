@@ -1,48 +1,39 @@
 {
-  // Cloudflare config during the Pages -> Workers migration.
+  // Cloudflare Worker — Static Assets + Accept-Language redirect.
   //
-  // Current state (PR #28 prep merged):
-  //   - Production traffic is still served by CF Pages.
-  //   - functions/_middleware.ts is the active server-side logic.
-  //   - worker/index.ts is committed but DORMANT — it will be wired up
-  //     in PR #29 when a new CF Workers project is created from the
-  //     dashboard against this repo (Workers Builds).
+  // Migration state: CF Pages → CF Workers complete (the old Pages project
+  // was deleted; a new Worker named `astro` was provisioned via the
+  // dashboard and bound to jonathan-aerts.dev as a custom domain).
   //
-  // Why this file stays minimal:
-  //   The CF Pages build pipeline tolerates wrangler.jsonc only when it
-  //   describes static assets. Adding Workers-only fields (main,
-  //   assets.run_worker_first, observability, etc.) causes the Pages
-  //   build/runtime to misroute — confirmed in production after the
-  //   first attempt during PR #28. The full Workers config lives as a
-  //   commented reference at the bottom of this file and will be
-  //   restored when PR #29 creates the standalone Workers project.
+  // Behaviour:
+  //   - `main` points at worker/index.ts which only intercepts `/` for the
+  //     Accept-Language redirect logic; every other path is delegated to
+  //     env.ASSETS.fetch().
+  //   - `assets.run_worker_first: true` is non-negotiable — without it the
+  //     static index.html would short-circuit the Worker on `/` and the
+  //     redirect / bot bypass would never fire.
+  //   - `assets.not_found_handling: "404-page"` makes CF serve dist/404.html
+  //     on unmatched routes (Astro emits that from src/pages/404.astro).
+  //   - `observability.enabled: true` + `head_sampling_rate: 1` streams
+  //     every request to Workers Logs / `wrangler tail`.
   //
   // Docs:
-  //   https://developers.cloudflare.com/pages/functions/
+  //   https://developers.cloudflare.com/workers/static-assets/
   //   https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "jonathan-aerts-dev",
+  "name": "astro",
   "compatibility_date": "2026-05-17",
+  "main": "./worker/index.ts",
   "assets": {
     "directory": "./dist/",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "404-page",
+  },
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
   },
 }
-
-// ── Reference config to restore in PR #29 when the standalone Workers
-//    project replaces the Pages deployment. Copy/paste back, do not
-//    enable here until the Pages project is decommissioned.
-// {
-//   "$schema": "node_modules/wrangler/config-schema.json",
-//   "name": "portfolio",
-//   "compatibility_date": "2026-05-17",
-//   "main": "./worker/index.ts",
-//   "assets": {
-//     "directory": "./dist/",
-//     "binding": "ASSETS",
-//     "run_worker_first": true,
-//     "not_found_handling": "404-page"
-//   },
-//   "workers_dev": true,
-//   "preview_urls": true,
-//   "observability": { "enabled": true, "head_sampling_rate": 1 }
-// }
