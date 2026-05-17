@@ -1,14 +1,19 @@
 {
-  // Cloudflare Workers config — pure static-assets serving mode.
-  // No `main` field on purpose: no Worker script runs, wrangler just publishes
-  // the contents of ./dist to the edge as a static site. This prevents CF's
-  // build env from auto-installing the @astrojs/cloudflare SSR adapter via
-  // `astro add cloudflare` on first deploy.
+  // Cloudflare Workers config — Worker entry + static-assets binding.
+  //
+  // The Worker (./worker/index.ts) implements minimal Accept-Language
+  // routing on `/` only (see that file for the full rationale). Every
+  // other request falls through to the ASSETS binding which serves the
+  // Astro build output unchanged.
+  //
+  // We keep `output: "static"` in Astro — the Worker does NOT do SSR.
   // Docs: https://developers.cloudflare.com/workers/static-assets/
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "jonathan-aerts-dev",
   "compatibility_date": "2025-05-01",
+  "main": "./worker/index.ts",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
   },
 }
