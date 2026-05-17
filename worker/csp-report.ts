@@ -12,9 +12,17 @@
 //     reporting service. Bodies are forwarded verbatim — we do NOT
 //     inject IP, UA, or any other identifier the browser doesn't
 //     already include.
+//   - Writes a low-cardinality `csp_violation` datapoint to the
+//     Analytics Engine dataset for SQL queryable trends (per-directive,
+//     per-blocked-domain). The console log and the analytics datapoint
+//     are independent signals — the log carries the raw body for
+//     forensics, the datapoint carries only the bucketed dimensions for
+//     long-term trend analysis. See docs/analytics-queries.md.
 //   - Throttled to 100 reports/minute/Worker-isolate so a misconfigured
-//     CSP can't flood the log stream. Past the cap we respond 429 and
-//     drop the report.
+//     CSP can't flood the log stream or the analytics dataset. Past the
+//     cap we respond 429 and drop the report (no log, no datapoint).
+
+import { extractDomain, recordCspViolation } from "./analytics";
 
 const CSP_REPORT_MAX_PER_MIN = 100;
 
@@ -45,6 +53,66 @@ export function isCspReportRequest(request: Request, url: URL): boolean {
 }
 
 /**
+ * Best-effort extraction of `(directive, blockedUri)` from both legacy
+ * `application/csp-report` and modern `application/reports+json`
+ * body shapes.
+ *
+ * Legacy body:
+ *   { "csp-report": { "violated-directive": "...", "blocked-uri": "..." } }
+ *
+ * Modern body (array of reports):
+ *   [
+ *     { "type": "csp-violation",
+ *       "body": { "violatedDirective": "...", "blockedURL": "..." } }
+ *   ]
+ *
+ * Returns `{ directive: "unknown", blockedUri: undefined }` on a shape
+ * we don't recognise so the caller can still emit a low-signal datapoint
+ * rather than dropping the event entirely (regression evidence > silence).
+ */
+function extractReportFields(report: unknown): {
+  directive: string;
+  blockedUri: string | undefined;
+} {
+  if (!report || typeof report !== "object") {
+    return { directive: "unknown", blockedUri: undefined };
+  }
+  const r = report as Record<string, unknown>;
+
+  // Legacy CSP2: `{ "csp-report": { … } }`
+  const legacy = r["csp-report"];
+  if (legacy && typeof legacy === "object") {
+    const inner = legacy as Record<string, unknown>;
+    return {
+      directive: stringOr(inner["violated-directive"] ?? inner.violatedDirective, "unknown"),
+      blockedUri: optString(inner["blocked-uri"] ?? inner.blockedUri ?? inner.blockedURL),
+    };
+  }
+
+  // Modern Reporting API: either a single object or an array of objects.
+  // The Worker receives each report individually in the dispatched
+  // request body, so we accept both shapes defensively.
+  const candidate = Array.isArray(r) ? (r[0] as Record<string, unknown> | undefined) : r;
+  if (candidate && typeof candidate === "object") {
+    const body = (candidate.body ?? candidate) as Record<string, unknown>;
+    return {
+      directive: stringOr(body["violated-directive"] ?? body.violatedDirective, "unknown"),
+      blockedUri: optString(body["blocked-uri"] ?? body.blockedUri ?? body.blockedURL),
+    };
+  }
+
+  return { directive: "unknown", blockedUri: undefined };
+}
+
+function stringOr(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function optString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+/**
  * Handle a CSP violation report submission.
  *
  * Returns:
@@ -52,9 +120,18 @@ export function isCspReportRequest(request: Request, url: URL): boolean {
  *   - 400 Bad Request on missing/unsupported content-type or invalid JSON
  *   - 429 Too Many Requests when the throttle cap is exceeded
  *
+ * The Analytics Engine binding is optional — when absent (test pool /
+ * misconfigured deploy) the handler still returns 204 with just the
+ * console log. The contract is that the *request* never breaks
+ * because of analytics.
+ *
  * Exported for unit testing in isolation from the main fetch handler.
  */
-export async function handleCspReport(request: Request): Promise<Response> {
+export async function handleCspReport(
+  request: Request,
+  env: { ANALYTICS?: AnalyticsEngineDataset },
+  ctx: ExecutionContext
+): Promise<Response> {
   if (!cspReportThrottleAdmit()) {
     return new Response(null, { status: 429 });
   }
@@ -77,6 +154,13 @@ export async function handleCspReport(request: Request): Promise<Response> {
 
   // Forward the raw report to the log stream. No PII added.
   console.log("[CSP-VIOLATION]", JSON.stringify(report));
+
+  // Bucket the report into low-cardinality dimensions and write a
+  // datapoint. Fire-and-forget; the response goes out immediately.
+  const { directive, blockedUri } = extractReportFields(report);
+  const blockedDomain = extractDomain(blockedUri);
+  ctx.waitUntil(Promise.resolve(recordCspViolation(env.ANALYTICS, directive, blockedDomain)));
+
   return new Response(null, { status: 204 });
 }
 

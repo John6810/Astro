@@ -9,3 +9,9 @@ node_modules/
 .vscode/
 .idea/
 .claude/settings.local.json
+# Local-only git worktrees used for parallel branches / Claude Code
+# sessions. The actual feature branches live in the repo's main
+# .git/ directory — these worktrees are pointers, not content.
+.claude/worktrees/
+# Wrangler dry-run output (build artifacts), regenerated on demand.
+.wrangler/

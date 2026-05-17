@@ -7,6 +7,7 @@
 
 import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { __isHtmlContentType } from "../index";
 
 const ORIGIN = "https://example.com";
 
@@ -184,6 +185,81 @@ describe("sitemap covers all three locales", () => {
     expect(xml).toContain("<loc>https://jonathan-aerts.dev/</loc>");
     expect(xml).toContain("<loc>https://jonathan-aerts.dev/fr/</loc>");
     expect(xml).toContain("<loc>https://jonathan-aerts.dev/ja/</loc>");
+  });
+});
+
+describe("HTML-only analytics filter (worker/index.ts __isHtmlContentType)", () => {
+  // The Worker only emits an analytics datapoint when the response is
+  // text/html. These tests verify the helper *and* exercise the
+  // non-HTML branches via SELF.fetch to make sure non-HTML responses
+  // really do flow through unchanged (status, content-type intact).
+  //
+  // Asserting the *absence* of writeDataPoint calls would require
+  // a mocked ANALYTICS binding (not how the test pool is wired);
+  // instead we trust the helper unit tests below and verify that
+  // requests still succeed.
+  //
+  // Imported lazily so the test file doesn't pull in worker/index.ts
+  // at module-load time — the pool already loads it via SELF.
+
+  it("sitemap returns application/xml — analytics filter should skip it", async () => {
+    const res = await fetchPath("/sitemap-index.xml");
+    expect(res.status).toBe(200);
+    const ct = res.headers.get("content-type") ?? "";
+    // application/xml or text/xml — both should NOT match text/html
+    expect(ct).toMatch(/xml/);
+    expect(ct.toLowerCase().startsWith("text/html")).toBe(false);
+  });
+
+  it("robots.txt returns text/plain — analytics filter should skip it", async () => {
+    const res = await fetchPath("/robots.txt");
+    expect(res.status).toBe(200);
+    const ct = (res.headers.get("content-type") ?? "").toLowerCase();
+    expect(ct.startsWith("text/html")).toBe(false);
+  });
+
+  it("rss.xml returns XML — analytics filter should skip it", async () => {
+    const res = await fetchPath("/rss.xml");
+    expect(res.status).toBe(200);
+    const ct = (res.headers.get("content-type") ?? "").toLowerCase();
+    expect(ct.startsWith("text/html")).toBe(false);
+  });
+
+  it("/fr/ and /ja/ HTML pages remain text/html (analytics filter keeps them)", async () => {
+    for (const path of ["/fr/", "/ja/"]) {
+      const res = await fetchPath(path);
+      expect(res.status).toBe(200);
+      const ct = (res.headers.get("content-type") ?? "").toLowerCase();
+      expect(ct.startsWith("text/html")).toBe(true);
+    }
+  });
+});
+
+describe("__isHtmlContentType helper", () => {
+  function withContentType(ct: string | null): Response {
+    return new Response("", {
+      headers: ct === null ? undefined : { "content-type": ct },
+    });
+  }
+
+  it.each<[string | null, boolean]>([
+    ["text/html", true],
+    ["text/html; charset=utf-8", true],
+    ["TEXT/HTML", true], // case-insensitive
+    ["text/html; charset=UTF-8", true],
+    ["application/xhtml+xml", false], // close but not text/html
+    ["application/xml", false],
+    ["text/xml", false],
+    ["text/plain", false],
+    ["image/png", false],
+    ["image/svg+xml", false], // SVG: skip
+    ["application/json", false],
+    ["application/javascript", false],
+    ["text/css", false],
+    [null, false], // missing header
+    ["", false],
+  ])("content-type %j -> %s", (ct, expected) => {
+    expect(__isHtmlContentType(withContentType(ct))).toBe(expected);
   });
 });
 

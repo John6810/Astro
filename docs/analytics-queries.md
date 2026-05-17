@@ -1,20 +1,63 @@
 # Workers Analytics Engine — SQL queries
 
-The Worker emits one datapoint per request (CSP reports excluded) to
-the `astro_metrics` dataset declared in `wrangler.jsonc`. Schema:
+The Worker emits one datapoint per **HTML** request (static assets,
+favicons, sitemap, etc. are deliberately not counted — see
+[`worker/index.ts`](../worker/index.ts) `isHtmlContentType`) plus one
+datapoint per CSP violation report ingested at `/csp-report`. All
+datapoints land in the `astro_metrics` dataset declared in
+`wrangler.jsonc`.
 
-| Column                             | Source                                                    | Cardinality |
-| ---------------------------------- | --------------------------------------------------------- | ----------- |
-| `blob1` (alias `event_type`)       | `redirect_locale` / `direct_serve` / `bot_bypass` / `404` | 4           |
-| `blob2` (alias `locale`)           | `en` / `fr` / `ja` / `unknown`                            | 4           |
-| `blob3` (alias `user_agent_class`) | `human` / `bot_ai` / `bot_search` / `unknown`             | 4           |
-| `double1` (alias `count`)          | always `1` — sum it to get request counts                 | 1           |
-| `index1`                           | mirrors `blob1` for cheap partition pruning               | 4           |
-| `timestamp`                        | auto-populated                                            | —           |
+## On `_sample_interval` — read this first
 
-See `worker/analytics.ts` for the producer side, and Cloudflare's
-[Analytics Engine SQL API docs](https://developers.cloudflare.com/analytics/analytics-engine/sql-api/)
-for how to run these from the dashboard, the API, or Grafana.
+Analytics Engine returns sample-weighted rows. Every row exposes a
+`_sample_interval` column (always ≥ 1) which is the "weight" of that
+sample. At low volume (anything below ~thousands of req/s), AE never
+downsamples and `_sample_interval` is always 1 — so `COUNT()` and
+`SUM(_sample_interval * double1)` return identical results.
+
+As volume grows, AE auto-samples the dataset and starts returning
+fewer rows with `_sample_interval > 1`. At that point a naïve
+`COUNT()` undercounts by the sampling factor. The fix is to **always
+write `SUM(_sample_interval * double1)`** in any query that returns
+event counts — it stays accurate across volume regimes.
+
+For our traffic the sampling factor will stay at 1, but the queries
+below all use the safe form so they keep working when the dataset
+grows.
+
+## Schema reference
+
+The dataset has a **fixed column layout** with **overloaded semantics
+per event type**. Querier must discriminate via `blob1` (also
+mirrored to `index1` for partition pruning) before interpreting
+`blob2`/`blob3`.
+
+| Column                       | Always                                                                      | Cardinality |
+| ---------------------------- | --------------------------------------------------------------------------- | ----------- |
+| `blob1` (alias `event_type`) | `redirect_locale` / `direct_serve` / `bot_bypass` / `404` / `csp_violation` | 5           |
+| `double1` (alias `count`)    | always `1` — multiply by `_sample_interval` before summing                  | 1           |
+| `index1`                     | mirrors `blob1` for cheap partition pruning                                 | 5           |
+| `timestamp`                  | auto-populated                                                              | —           |
+| `_sample_interval`           | weight for sampled rows (see above)                                         | —           |
+
+Per-event semantics for `blob2` and `blob3`:
+
+| `blob1` (event_type) | `blob2`                                                 | `blob3`                                                                               |
+| -------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `redirect_locale`    | `locale` (`en` / `fr` / `ja` / `unknown`)               | `user_agent_class` (`human` / `bot_ai` / `bot_search` / `unknown`)                    |
+| `direct_serve`       | same as above                                           | same as above                                                                         |
+| `bot_bypass`         | `en` (fixed — bots only see EN body)                    | `user_agent_class` (`bot_ai` / `bot_search` is the expected value)                    |
+| `404`                | `locale`                                                | `user_agent_class`                                                                    |
+| `csp_violation`      | `directive` (e.g. `script-src`, `style-src`, `unknown`) | `blocked_domain` (bare hostname, or scheme like `data:` / `inline`, or `unparseable`) |
+
+**Producer side**: see [`worker/analytics.ts`](../worker/analytics.ts)
+(`recordRequest` and `recordCspViolation`). The two functions write
+to the same dataset; the schema overload is the trade-off for keeping
+the binding count at one.
+
+For how to run these queries (CF Dashboard, HTTP API, or Grafana),
+see Cloudflare's
+[Analytics Engine SQL API docs](https://developers.cloudflare.com/analytics/analytics-engine/sql-api/).
 
 ## Where to run
 
@@ -28,13 +71,17 @@ for how to run these from the dashboard, the API, or Grafana.
 
 ## Quota
 
-10M datapoints / month on the free tier. At ~1 datapoint per request,
-the threshold is ~3.85 req/sec sustained — well above realistic
-portfolio traffic. If you ever cross 1M / month start sampling on the
-producer side (e.g. `if (Math.random() < 0.1) recordRequest(…)`); the
-SQL `count() * 10` reconstructs the original numbers.
+10M datapoints / month on the free tier. With the HTML-only filter
+in place we emit roughly one datapoint per page view (not per HTTP
+request, which means images, fonts, CSS, JS, sitemap, robots don't
+count) plus one per CSP violation. At ~1 datapoint per page view the
+threshold is ~3.85 page views/sec sustained — well above realistic
+portfolio traffic. If you ever cross 1M / month start sampling on
+the producer side (e.g. `if (Math.random() < 0.1) recordRequest(…)`);
+the SQL `SUM(_sample_interval * double1) * 10` reconstructs the
+original numbers.
 
-## Queries
+## Queries — request events
 
 ### Redirect ratio per locale, last 7 days
 
@@ -72,10 +119,17 @@ SELECT
   blob3 AS user_agent_class,
   SUM(_sample_interval * double1) AS hits
 FROM astro_metrics
-WHERE timestamp >= NOW() - INTERVAL '30' DAY
+WHERE
+  blob1 IN ('redirect_locale', 'direct_serve', 'bot_bypass', '404')
+  AND timestamp >= NOW() - INTERVAL '30' DAY
 GROUP BY user_agent_class
 ORDER BY hits DESC
 ```
+
+Note the explicit `blob1 IN (…)` — without it the query would also
+count `csp_violation` rows whose `blob3` is a `blocked_domain`
+string, which is meaningless for the bot/human question. Always
+scope a `blob3`-aggregation query to the relevant `event_type` set.
 
 For "is the site getting picked up by LLM crawlers?", filter to AI
 bots only:
@@ -86,7 +140,8 @@ SELECT
   SUM(_sample_interval * double1) AS ai_bot_hits
 FROM astro_metrics
 WHERE
-  blob3 = 'bot_ai'
+  blob1 IN ('redirect_locale', 'direct_serve', 'bot_bypass', '404')
+  AND blob3 = 'bot_ai'
   AND timestamp >= NOW() - INTERVAL '30' DAY
 GROUP BY day
 ORDER BY day
@@ -118,7 +173,9 @@ SELECT
   blob1 AS event_type,
   SUM(_sample_interval * double1) AS hits
 FROM astro_metrics
-WHERE timestamp >= NOW() - INTERVAL '7' DAY
+WHERE
+  blob1 IN ('redirect_locale', 'direct_serve', 'bot_bypass')
+  AND timestamp >= NOW() - INTERVAL '7' DAY
 GROUP BY day, event_type
 ORDER BY day, event_type
 ```
@@ -131,67 +188,130 @@ SELECT
   blob3 AS user_agent_class,
   SUM(_sample_interval * double1) AS hits
 FROM astro_metrics
-WHERE timestamp >= NOW() - INTERVAL '30' DAY
+WHERE
+  blob1 IN ('redirect_locale', 'direct_serve', 'bot_bypass', '404')
+  AND timestamp >= NOW() - INTERVAL '30' DAY
 GROUP BY locale, user_agent_class
 ORDER BY hits DESC
 LIMIT 20
 ```
 
-### Smoke check — datapoints landed in the last 5 min
+## Queries — CSP violation events
+
+Each row in this section has the **overloaded** blob layout:
+`blob2 = directive`, `blob3 = blocked_domain`. Don't mix these
+queries with the request-event queries above without an explicit
+`blob1` filter.
+
+### Violations per directive, last 7 days
+
+```sql
+SELECT
+  blob2 AS directive,
+  SUM(_sample_interval * double1) AS violations
+FROM astro_metrics
+WHERE
+  blob1 = 'csp_violation'
+  AND timestamp >= NOW() - INTERVAL '7' DAY
+GROUP BY directive
+ORDER BY violations DESC
+```
+
+Expected dominant rows: `script-src` (the strictest directive,
+catches most third-party drift), then `style-src`, then `img-src`.
+A spike in `script-src` after a deploy means a new bundle started
+loading a script the CSP doesn't allow — fix by either whitelisting
+the source or removing the script.
+
+### Top blocked domains, last 30 days
+
+```sql
+SELECT
+  blob3 AS blocked_domain,
+  blob2 AS directive,
+  SUM(_sample_interval * double1) AS violations
+FROM astro_metrics
+WHERE
+  blob1 = 'csp_violation'
+  AND timestamp >= NOW() - INTERVAL '30' DAY
+GROUP BY blocked_domain, directive
+ORDER BY violations DESC
+LIMIT 50
+```
+
+Useful for the "is something on the page trying to phone home?"
+question. Bucket interpretation:
+
+- bare hostname (e.g. `googletagmanager.com`) → real third-party
+  request we didn't whitelist
+- `inline` / `eval` → unsafe inline script someone forgot to nonce
+- `data:` / `blob:` → opaque data-URI usage (usually fine but
+  flag-worthy if the directive wasn't expected)
+- `unparseable` → malformed report bodies (probably worth a one-off
+  manual log inspection if it's not zero)
+
+### Synthetic monitor #10 health check, last 1 day
+
+The Better Stack `csp-report-ingest` monitor (see
+[`docs/monitoring.md`](./monitoring.md)) POSTs a synthetic violation
+every 5 min from 5 regions. We should see ~288 rows / day at steady
+state — anything significantly below that means the ingest pipeline
+itself is broken.
+
+```sql
+SELECT COUNT() AS synthetic_hits
+FROM astro_metrics
+WHERE
+  blob1 = 'csp_violation'
+  AND blob3 = 'example.com'
+  AND timestamp >= NOW() - INTERVAL '1' DAY
+```
+
+(`COUNT()` is intentional here — we want the raw row count, not the
+weighted sum, to compare against the deterministic monitor cadence.)
+
+### CSP violations per day, last 14 days
+
+```sql
+SELECT
+  toStartOfDay(timestamp) AS day,
+  SUM(_sample_interval * double1) AS violations
+FROM astro_metrics
+WHERE
+  blob1 = 'csp_violation'
+  AND timestamp >= NOW() - INTERVAL '14' DAY
+GROUP BY day
+ORDER BY day
+```
+
+## Smoke check — datapoints landed in the last 5 min
 
 Useful right after a deploy to confirm `env.ANALYTICS.writeDataPoint`
-is actually firing:
+is firing for both event categories:
 
 ```sql
 SELECT
   blob1 AS event_type,
-  blob2 AS locale,
-  blob3 AS user_agent_class,
+  blob2 AS dim2,
+  blob3 AS dim3,
   COUNT() AS rows
 FROM astro_metrics
 WHERE timestamp >= NOW() - INTERVAL '5' MINUTE
-GROUP BY event_type, locale, user_agent_class
+GROUP BY event_type, dim2, dim3
 ```
+
+(`COUNT()` for the smoke check rather than `SUM(_sample_interval *
+double1)` because we want to confirm rows are _landing_, not their
+aggregated business meaning.)
 
 If the result is empty for 5 min after a known-good traffic burst
-(e.g. you just curled a few endpoints), check:
+(e.g. you just curled a few endpoints and POSTed a CSP report):
 
-- `wrangler tail` for runtime errors from `recordRequest`
+- `wrangler tail` for runtime errors from `recordRequest` or
+  `recordCspViolation`
 - The `ANALYTICS` binding exists in the Worker → Settings → Bindings
-  (CF dashboard)
+  (CF dashboard) — see
+  [`docs/cloudflare-gotchas.md`](./cloudflare-gotchas.md) for the
+  pre-provisioning gotcha that caused PR #35's silent build failure
 - `wrangler.jsonc` still declares the `analytics_engine_datasets`
   block (the deploy may have rewritten it if a previous build failed)
-
-### Top non-redirected paths (404 + direct_serve buckets)
-
-```sql
--- Path is NOT in the dataset (cardinality control — we only kept the
--- locale prefix). This query splits direct_serve by locale.
-SELECT
-  blob2 AS locale,
-  blob1 AS event_type,
-  SUM(_sample_interval * double1) AS hits
-FROM astro_metrics
-WHERE
-  blob1 IN ('direct_serve', '404')
-  AND timestamp >= NOW() - INTERVAL '7' DAY
-GROUP BY locale, event_type
-ORDER BY hits DESC
-```
-
-If you need per-path granularity (e.g. _which_ 404s are firing), add a
-`blob4` (or `blob5`) on the producer side — just be mindful of
-cardinality. A handful of high-frequency 404 paths is fine; logging
-every random scanner URL blows up the dataset for no insight.
-
-## On `_sample_interval`
-
-Analytics Engine downsamples high-cardinality datasets automatically.
-Every row exposes `_sample_interval` (>= 1) which is the "weight" of
-that sample. To get accurate counts, always multiply
-`double1 * _sample_interval` before summing (or use the helper
-function `SUM(_sample_interval * double1)`).
-
-For our traffic volume the sampling factor will stay at 1 — but the
-queries above use the safe form regardless so they keep working when
-the dataset grows.

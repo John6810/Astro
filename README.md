@@ -13,6 +13,13 @@ Workers (Static Assets) at https://jonathan-aerts.dev/.
   `dist/` (Astro's build output)
 - **Security**: 7 response headers + nonce-based CSP — see
   [`docs/security-headers.md`](./docs/security-headers.md)
+- **Observability**: Analytics Engine instrumentation + external
+  synthetic monitoring + drift detection on `/version` — see
+  [`docs/analytics-queries.md`](./docs/analytics-queries.md) and
+  [`docs/monitoring.md`](./docs/monitoring.md). CF-specific
+  operational landmines (binding pre-provisioning, Pages → Workers
+  API split, branch-slug truncation collisions) are documented in
+  [`docs/cloudflare-gotchas.md`](./docs/cloudflare-gotchas.md).
 
 ## Tests
 
@@ -30,7 +37,11 @@ PREVIEW_URL=https://… pnpm test:e2e         # E2E against a workers.dev previe
 ```
 
 CI on every PR: static → unit → e2e (E2E waits for the Cloudflare
-Workers Builds preview deployment via the GitHub Deployments API).
+Workers Builds check-run on the head SHA, then targets the branch
+preview alias — see
+[`docs/cloudflare-gotchas.md`](./docs/cloudflare-gotchas.md) §2 for
+why the older "Deployments API" approach broke after the Pages →
+Workers migration).
 
 ## Development
 
@@ -47,3 +58,10 @@ pnpm wrangler:tail     # stream Workers Logs
   headers, CSP strategy, `/csp-report` endpoint, strict-dynamic notes
 - [`docs/testing.md`](./docs/testing.md) — testing layout, how to add
   new ACs, how to debug CI failures
+- [`docs/analytics-queries.md`](./docs/analytics-queries.md) —
+  Workers Analytics Engine schema, SQL queries, sample-interval
+  weighting
+- [`docs/monitoring.md`](./docs/monitoring.md) — external synthetic
+  monitoring (Better Stack, 11 monitors), drift detection workflow
+- [`docs/cloudflare-gotchas.md`](./docs/cloudflare-gotchas.md) —
+  operational landmines from the CF Pages → Workers migration

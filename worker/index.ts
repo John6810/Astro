@@ -41,6 +41,7 @@ import {
   type AnalyticsLocale,
   type EventType,
 } from "./analytics";
+import { buildVersionResponse, isVersionRequest } from "./version";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -74,12 +75,34 @@ function secureResponse(response: Response, request: Request): Response {
 function emitMetric(
   ctx: ExecutionContext,
   dataset: AnalyticsEngineDataset | undefined,
-  event: EventType,
+  event: Exclude<EventType, "csp_violation">,
   locale: AnalyticsLocale,
   ua: string
 ): void {
   if (!dataset) return;
   ctx.waitUntil(Promise.resolve(recordRequest(dataset, event, locale, classifyUserAgent(ua))));
+}
+
+/**
+ * True when the response is HTML — meaning a user-facing page, worth
+ * counting in the analytics dataset. Static assets (images, fonts,
+ * CSS, JS, XML, plain text) return false so the dataset stays focused
+ * on traffic that maps to "someone read a page".
+ *
+ * The check matches `text/html` with an optional charset suffix
+ * (`text/html; charset=utf-8`) and is case-insensitive. We do NOT
+ * rely on isHtmlResponse() from security-headers.ts because that
+ * helper has a different remit (deciding whether to inject a CSP
+ * nonce) and we want analytics filtering decisions to remain explicit
+ * here in the routing layer.
+ *
+ * Exported (with the `__` test-only prefix convention used elsewhere
+ * in this module) so unit tests can verify the boolean directly
+ * without round-tripping through SELF.fetch.
+ */
+export function __isHtmlContentType(response: Response): boolean {
+  const ct = (response.headers.get("content-type") ?? "").toLowerCase();
+  return ct.startsWith("text/html");
 }
 
 const BOT_UA =
@@ -137,11 +160,22 @@ export default {
 
     // CSP violation reports — handled BEFORE locale routing. This path
     // is intentionally NOT served from dist/, MUST NOT carry Vary, and
-    // MUST NOT trigger the Accept-Language redirect. Also explicitly
-    // NOT instrumented for analytics — CSP reports are already logged
-    // and counting them in the request metrics would noise the dataset.
+    // MUST NOT trigger the Accept-Language redirect. The handler emits
+    // its OWN `csp_violation` datapoint to the analytics dataset (with
+    // a different blob layout than request events) — it doesn't go
+    // through emitMetric below.
     if (isCspReportRequest(request, url)) {
-      return handleCspReport(request);
+      return handleCspReport(request, env, ctx);
+    }
+
+    // GET /version — drift detection endpoint. Returns the deployed
+    // commit SHA + build timestamp. Handled BEFORE locale routing so
+    // it's reachable on every locale-agnostic path, and explicitly
+    // NOT instrumented (ops endpoint, would just be noise). Security
+    // headers still applied so the response carries the standard
+    // HSTS / X-Frame-Options / etc. set.
+    if (isVersionRequest(url, request.method)) {
+      return applySecurityHeaders(buildVersionResponse(), request);
     }
 
     // Only the root path participates in the negotiation. Every other URL
@@ -150,8 +184,14 @@ export default {
     // contamination, no extra logic. Security headers are still applied.
     if (url.pathname !== "/") {
       const response = await env.ASSETS.fetch(request);
-      const event: EventType = response.status === 404 ? "404" : "direct_serve";
-      emitMetric(ctx, env.ANALYTICS, event, localeFromPath(url.pathname), ua);
+      // Only HTML responses generate analytics datapoints. Images,
+      // fonts, CSS, JS, sitemap.xml, robots.txt etc. flow through
+      // unrecorded — they don't tell us anything about "did someone
+      // read a page", they just bloat the dataset.
+      if (__isHtmlContentType(response)) {
+        const event: EventType = response.status === 404 ? "404" : "direct_serve";
+        emitMetric(ctx, env.ANALYTICS, event, localeFromPath(url.pathname), ua);
+      }
       return secureResponse(response, request);
     }
 

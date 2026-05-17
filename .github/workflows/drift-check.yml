@@ -1,0 +1,193 @@
+name: Drift check
+
+# Detect when the deployed Worker has fallen behind `main`. Two triggers:
+#   - push to main: catches a failed CF Workers Build immediately
+#     (the build posts to check-runs separately, but this job is a
+#     belt-and-braces guarantee that we notice within minutes).
+#   - every 10 min: catches drift that appears later — e.g. a rollback
+#     in the CF dashboard, an account-level issue that breaks deploys,
+#     or a transient build failure on a follow-up commit.
+#
+# Tolerance window: a freshly merged commit may legitimately not be
+# deployed yet (CF Workers Builds + edge propagation take ~1-2 min).
+# We tolerate up to 10 min between commit-time and check-time before
+# flagging drift.
+#
+# Failure surface: this workflow is intentionally minimal — fail the
+# job, optionally hit an alert webhook (placeholder for now). If the
+# job itself starts failing (GH API outage, network), Better Stack
+# monitor #11 still pings GET /version every 3 min as a safety net.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Every 10 minutes. The 12-min tolerance below means a deploy that
+    # takes the full Workers Build duration (~45s) plus edge propagation
+    # never triggers a false positive on the next scheduled run.
+    - cron: "*/10 * * * *"
+  # Manual trigger lets us re-run drift detection on demand without
+  # waiting for the next cron tick (e.g. after a manual rollback).
+  workflow_dispatch:
+
+# Read-only on the repo metadata side; the only write is the optional
+# PR comment in the drift case which is handled via the default
+# GITHUB_TOKEN.
+permissions:
+  contents: read
+  pull-requests: write
+
+# Avoid stacking: if the previous scheduled run is still going (network
+# slow / GH API rate-limited), drop the new one rather than queueing.
+concurrency:
+  group: drift-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Compare /version to main HEAD
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      VERSION_URL: https://jonathan-aerts.dev/version
+      # Minutes of grace between commit-time and now. A merge to main
+      # legitimately takes ~1-2 min to reach the edge; this is the
+      # ceiling above which we treat the gap as real drift.
+      TOLERANCE_MINUTES: 10
+    steps:
+      - name: Resolve latest main SHA
+        id: main
+        run: |
+          set -euo pipefail
+          # Use the GitHub API (not a checkout) — drift check should be
+          # independent of the workspace state.
+          LATEST_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/commits/main")
+          LATEST_SHA=$(echo "$LATEST_JSON" | jq -r '.sha')
+          LATEST_DATE=$(echo "$LATEST_JSON" | jq -r '.commit.committer.date')
+          echo "sha=$LATEST_SHA"          >> "$GITHUB_OUTPUT"
+          echo "date=$LATEST_DATE"        >> "$GITHUB_OUTPUT"
+          echo "Latest main commit: $LATEST_SHA committed at $LATEST_DATE"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch deployed /version
+        id: deployed
+        run: |
+          set -euo pipefail
+          # Retry up to 3 times with 5s backoff. Transient network
+          # issues are common enough that we don't want them to look
+          # like drift.
+          DEPLOYED_SHA=""
+          for attempt in 1 2 3; do
+            RESPONSE=$(curl -sf --max-time 10 "$VERSION_URL" || echo "")
+            if [ -n "$RESPONSE" ]; then
+              DEPLOYED_SHA=$(echo "$RESPONSE" | jq -r '.sha // empty')
+              if [ -n "$DEPLOYED_SHA" ]; then
+                echo "Attempt $attempt: deployed sha=$DEPLOYED_SHA"
+                break
+              fi
+            fi
+            echo "Attempt $attempt failed; sleeping 5s"
+            sleep 5
+          done
+
+          if [ -z "$DEPLOYED_SHA" ]; then
+            echo "::error::Could not reach $VERSION_URL after 3 attempts. Treating as transient and exiting 0."
+            # Monitor #11 catches the case where /version is actually
+            # down for an extended period — this workflow only flags
+            # *drift*, not endpoint health.
+            exit 0
+          fi
+          echo "sha=$DEPLOYED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Compare SHAs
+        id: cmp
+        env:
+          LATEST_SHA: ${{ steps.main.outputs.sha }}
+          LATEST_DATE: ${{ steps.main.outputs.date }}
+          DEPLOYED_SHA: ${{ steps.deployed.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$LATEST_SHA" = "$DEPLOYED_SHA" ]; then
+            echo "::notice::In sync — main@$LATEST_SHA == deployed@$DEPLOYED_SHA"
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Compute age of the latest commit in minutes. macOS / BSD
+          # date is not available on ubuntu-latest, so coreutils `date`
+          # is fine here.
+          LATEST_EPOCH=$(date -d "$LATEST_DATE" +%s)
+          NOW_EPOCH=$(date +%s)
+          AGE_MIN=$(( (NOW_EPOCH - LATEST_EPOCH) / 60 ))
+
+          echo "Drift detected:"
+          echo "  main HEAD:  $LATEST_SHA   (committed $AGE_MIN min ago)"
+          echo "  deployed:   $DEPLOYED_SHA"
+          echo "  tolerance:  $TOLERANCE_MINUTES min"
+
+          if [ "$AGE_MIN" -lt "$TOLERANCE_MINUTES" ]; then
+            echo "::notice::Tolerating fresh commit (age $AGE_MIN min < $TOLERANCE_MINUTES min). CF Workers Build likely in progress."
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "drift=true" >> "$GITHUB_OUTPUT"
+          echo "latest_short=${LATEST_SHA:0:7}"     >> "$GITHUB_OUTPUT"
+          echo "deployed_short=${DEPLOYED_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          echo "age=$AGE_MIN"                       >> "$GITHUB_OUTPUT"
+
+      - name: Find associated PR (if any)
+        id: pr
+        if: steps.cmp.outputs.drift == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # The latest merged PR is the most likely culprit for a
+          # post-merge deploy failure. Find it; on cron triggers there
+          # may be none associated with the SHA, which is fine.
+          PR_NUMBER=$(gh pr list -R "$GITHUB_REPOSITORY" --state merged --limit 1 \
+            --json number,mergeCommit \
+            --jq '.[] | select(.mergeCommit.oid | startswith("${{ steps.main.outputs.sha }}")) | .number' \
+            || echo "")
+          if [ -n "$PR_NUMBER" ]; then
+            echo "pr=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+            echo "Found PR #$PR_NUMBER"
+          else
+            echo "No PR matches the latest main commit (possibly a direct push)."
+          fi
+
+      - name: Post PR comment on drift
+        if: steps.cmp.outputs.drift == 'true' && steps.pr.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.pr }}
+          LATEST: ${{ steps.cmp.outputs.latest_short }}
+          DEPLOYED: ${{ steps.cmp.outputs.deployed_short }}
+          AGE: ${{ steps.cmp.outputs.age }}
+        run: |
+          gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body "$(cat <<EOF
+          ⚠️ **Deployment drift detected** — main is at \`$LATEST\` but the
+          edge is still serving \`$DEPLOYED\` (commit age: $AGE min).
+
+          Most likely causes:
+          1. CF Workers Build failed silently → check the dashboard log for
+             this commit on https://dash.cloudflare.com/
+          2. A binding was added that needs pre-provisioning →
+             see [docs/cloudflare-gotchas.md](../blob/main/docs/cloudflare-gotchas.md)
+          3. A manual rollback was performed in the CF dashboard.
+
+          This comment is posted by \`drift-check.yml\`.
+          EOF
+          )"
+
+      - name: Fail the job
+        if: steps.cmp.outputs.drift == 'true'
+        env:
+          LATEST: ${{ steps.cmp.outputs.latest_short }}
+          DEPLOYED: ${{ steps.cmp.outputs.deployed_short }}
+          AGE: ${{ steps.cmp.outputs.age }}
+        run: |
+          echo "::error::Deployment drift: main@$LATEST, deployed@$DEPLOYED, age $AGE min"
+          exit 1
