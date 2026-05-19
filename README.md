@@ -3,6 +3,29 @@
 Personal portfolio site. Astro v6 + Tailwind v4, deployed to Cloudflare
 Workers (Static Assets) at https://jonathan-aerts.dev/.
 
+## Production stack
+
+| Capability                                                             | Status           | Doc                                                                                                |
+| ---------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------- |
+| Security headers (7) + nonce-based CSP with `'strict-dynamic'`         | ✅ Live          | [security-headers.md](docs/security-headers.md)                                                    |
+| CSP violation reporting endpoint + Analytics Engine integration        | ✅ Live          | [security-headers.md](docs/security-headers.md)                                                    |
+| Unit tests (Vitest workers pool) + Playwright E2E (Chromium + Firefox) | ✅ CI            | [testing.md](docs/testing.md)                                                                      |
+| Workers Analytics Engine — 6 event types, schema-overloaded dataset    | ✅ Live          | [analytics-queries.md](docs/analytics-queries.md)                                                  |
+| Better Stack synthetic monitoring — 12 monitors                        | ⚠️ Setup pending | [monitoring.md](docs/monitoring.md)                                                                |
+| Alert chain end-to-end validation procedure                            | 📖 Documented    | [monitoring.md](docs/monitoring.md#alert-chain-end-to-end-validation)                              |
+| CF Web Analytics RUM (Core Web Vitals, cookieless)                     | ✅ Live          | [observability.md](docs/observability.md)                                                          |
+| Drift detection (push-to-main + 10-min cron)                           | ✅ CI            | [monitoring.md](docs/monitoring.md#drift-detection-githubworkflowsdrift-checkyml)                  |
+| Edge cache (nonce-aware, SHA-salted key, 5-min TTL)                    | ✅ Live          | [performance-baseline.md](docs/performance-baseline.md)                                            |
+| robots.txt coherence test (mirrors worker BOT_UA bypass)               | ✅ CI            | [monitoring.md](docs/monitoring.md)                                                                |
+| `/version` endpoint + drift detection workflow                         | ✅ Live          | [cloudflare-gotchas.md §5](docs/cloudflare-gotchas.md#5-the-built_at--commit_sha-injection-points) |
+| Cloudflare / GitHub / secret-scanning gotchas                          | 📖 Documented    | [cloudflare-gotchas.md](docs/cloudflare-gotchas.md)                                                |
+| Performance baseline (bundle + CPU time)                               | 📊 Captured      | [performance-baseline.md](docs/performance-baseline.md)                                            |
+
+Legend: ✅ Live (deployed and verified) — ✅ CI (asserted in
+automated tests) — ⚠️ Setup pending (code/docs ready, one-time
+external setup outstanding) — 📖 Documented (procedural, not
+automated) — 📊 Captured (measurement reference, not automated).
+
 ## Architecture
 
 - **Frontend**: Astro static build with i18n routing (`en`, `fr`, `ja`)
@@ -75,3 +98,6 @@ pnpm wrangler:tail     # stream Workers Logs
 - [`docs/observability.md`](./docs/observability.md) — 5-signal
   observability map (RUM + traffic + custom events + synthetics +
   drift) and the CF Web Analytics setup walkthrough
+- [`docs/performance-baseline.md`](./docs/performance-baseline.md) —
+  current bundle size, coverage, and CPU-time measurement procedure;
+  reference point for regression detection on future PRs

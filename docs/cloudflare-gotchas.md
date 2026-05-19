@@ -214,6 +214,93 @@ The drift-check workflow (see
 [`docs/monitoring.md`](./monitoring.md)) would NOT catch this
 because `/version` itself isn't cached.
 
+## 7. Fake credentials in docs trip secret scanners
+
+Pattern-based secret scanners (`gitleaks generic-api-key`, the
+default AWS / Stripe / JWT detectors, github-secret-scanning) cannot
+distinguish a realistic-fake placeholder from a real key — they
+match on entropy, length, and character class. A "this is just an
+example" comment doesn't help; the scanner doesn't read prose.
+
+**Placeholders that WILL trip scanners** (do not use):
+
+- `ABCDEFGHIJKLMNOP1234567890abcdef` — 32-hex, indistinguishable from
+  a real CF Web Analytics / Mixpanel / Plausible token
+- `sk-proj-abcdef1234567890abcdef1234567890` — OpenAI key shape
+- `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.…` — JWT shape
+- `AKIAIOSFODNN7EXAMPLE` — AWS access key ID shape (even though
+  `EXAMPLE` is in the suffix, the prefix matches)
+
+**Good placeholder conventions** (scanner-safe and obviously a
+placeholder to humans):
+
+- `<YOUR_TOKEN_HERE>` — angle brackets, uppercase, semantic
+- `<your-secret-here>`
+- `xxx-replace-me-xxx`
+- `${MY_TOKEN}` — shell-style env-var reference
+- `REPLACE_ME_WITH_YOUR_TOKEN`
+
+Rule of thumb: a placeholder must be obviously a placeholder at a
+glance, **including to a regex without context**. If you'd wonder
+"is this real?" for half a second, a scanner will flag it.
+
+For real-but-**public** tokens (CF Web Analytics site token, public
+PostHog key, public Stripe `pk_*`): the right pattern is an explicit
+allowlist in `.gitleaks.toml` with an inline comment explaining why
+it's public:
+
+```toml
+[allowlist]
+regexes = [
+  # CF Web Analytics Site Token — public site-scoped identifier,
+  # embedded in every served HTML by design.
+  '''f267155885aa4991a341b833c47a3c08''',
+]
+```
+
+If a **real** key accidentally lands in git history: rotation is
+the only safe recovery. Allowlist + force-push + squash does NOT
+delete the value from forks, mirrors, the GitHub event log, or
+anyone's local clone. Rotate first, then clean up the repo.
+
+This bit us on PR #38 where a `<your-32-hex>`-style example in
+`docs/observability.md` tripped the `generic-api-key` rule even
+though the surrounding prose clearly framed it as fake. Replacing
+with `<YOUR_32_CHAR_TOKEN_HERE>` made the scanner happy and the
+human reader clearer.
+
+## 8. `gh pr` `statusCheckRollup` retains historical failures after force-push
+
+`gh pr view <N> --json statusCheckRollup` returns the **worst**
+conclusion observed per check-name over the entire PR history.
+Force-pushing or squashing the branch does **not** clear the rollup.
+This is a GitHub API quirk, not a `gh` CLI bug.
+
+**Symptom**: the PR page (and `gh pr view`) shows
+"FAILURE: CodeQL" in the rollup even though the latest commit on
+HEAD has CodeQL green. The PR will still merge fine — the required-
+checks gate is computed against HEAD, not the rollup — but it looks
+alarming.
+
+**How to check the real status on HEAD**:
+
+```bash
+HEAD_SHA=$(gh pr view <N> --json headRefOid -q .headRefOid)
+gh api repos/<owner>/<repo>/commits/$HEAD_SHA/check-runs \
+  --jq '[.check_runs[] | {name, status, conclusion}] | sort_by(.name)'
+```
+
+That returns the actual check-runs attached to the HEAD commit,
+not the historical aggregate. Use this whenever the rollup says
+something contradicts what you just pushed.
+
+We hit this on PR #38: gitleaks was still red in the rollup three
+commits after we fixed it because the rollup retained the failure
+from the original push. The required-checks branch protection
+was checking HEAD (which was green), so the merge button stayed
+enabled the whole time. Useful CI debugging principle: **don't
+trust the rollup; verify against the HEAD SHA**.
+
 ## Cross-links
 
 - [`docs/monitoring.md`](./monitoring.md) — synthetic monitors,

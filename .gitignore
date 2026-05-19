@@ -15,3 +15,9 @@ node_modules/
 .claude/worktrees/
 # Wrangler dry-run output (build artifacts), regenerated on demand.
 .wrangler/
+# Istanbul coverage report — regenerated on every `pnpm test --coverage`.
+coverage/
+# Local-only asset dump (Azure architecture icons etc.) — not used
+# at build time, not part of the dist output. Lives here for the
+# repo owner's convenience.
+/Icons/

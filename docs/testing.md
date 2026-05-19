@@ -28,6 +28,41 @@ worker/__tests__/
 ```bash
 pnpm test           # astro build && vitest run — single pass
 pnpm test:watch     # vitest watch mode (no rebuild between runs)
+pnpm test --coverage  # add an Istanbul coverage report (open coverage/index.html)
+```
+
+### Coverage
+
+Istanbul provider, configured in
+[`vitest.config.ts`](../vitest.config.ts). The text reporter prints
+a per-file table; the HTML reporter (open `coverage/index.html`)
+shows annotated source.
+
+Captured during the polish PR (post-PR-38 main snapshot — see
+[`docs/performance-baseline.md`](./performance-baseline.md) for the
+full table):
+
+| File                          | % Stmts | % Lines |
+| ----------------------------- | ------- | ------- |
+| `worker/analytics.ts`         | 97.37   | 100     |
+| `worker/cache.ts`             | 96.67   | 100     |
+| `worker/csp-report.ts`        | 91.11   | 90.9    |
+| `worker/index.ts`             | 97.40   | 100     |
+| `worker/security-headers.ts`  | 100     | 100     |
+| `worker/version.ts`           | 100     | 100     |
+| `worker/version.generated.ts` | 100     | 100     |
+
+**Floor: 90% statements + 90% lines per file.** Any PR that drops
+a file below either threshold should add targeted tests in the
+same commit, not defer.
+
+Branch coverage is informational only — `worker/cache.ts` is at
+~67% branches because of small-count integer math (4/6 branches),
+not a real coverage hole; the uncovered ones are `if (cl)` /
+`if (ct)` guards inside `makeCacheable` for headers the test
+responses don't bother to set.
+
+```bash
 pnpm test:csp       # security-headers.test.ts only
 ```
 

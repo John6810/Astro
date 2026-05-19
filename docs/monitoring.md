@@ -240,6 +240,131 @@ Each regression should:
 
 Then revert, watch the recovery hit on the next check.
 
+## Alert chain end-to-end validation
+
+Individual monitor assertions have been tested locally and in CI
+(against the Worker preview URL). What hasn't been validated as a
+whole is the full chain:
+
+**real regression → monitor detects → incident opens → alert routes
+through every configured channel → operator acknowledges → recovery**
+
+Each hop in that chain has a different failure mode (Better Stack
+agent down, webhook 4xx, email spam-filtered, Slack token revoked,
+operator OOO without a fallback). Testing the chain end-to-end is
+the only way to be sure it works _as a chain_, not just per part.
+Do this once after Better Stack setup, then re-validate quarterly.
+
+### Procedure (non-destructive, ~20 min)
+
+1. **Create a throwaway branch** locally:
+
+   ```bash
+   git checkout main && git pull
+   git checkout -b chore/alert-chain-test
+   ```
+
+2. **Apply a one-line regression** that breaks exactly one AC.
+   Pick one that exercises the alert path you want to validate.
+   Example for monitor #1 (`loc-redirect-fr`):
+
+   ```diff
+   - const location = new URL(`/${chosen}/`, url.origin).toString();
+   + const location = new URL(`/en/`, url.origin).toString();
+   ```
+
+   in `worker/index.ts`. The `fr-BE` synthetic probe will then
+   redirect to `/en/` instead of `/fr/`, tripping the `Location`
+   header assertion.
+
+3. **Push the branch**:
+
+   ```bash
+   git add worker/index.ts
+   git commit -m "chore: trip monitor #1 for alert-chain validation (revert me)"
+   git push -u origin chore/alert-chain-test
+   ```
+
+   CF Workers Builds will publish the preview at
+   `chore-alert-chain-test-astro.aerts-jonathan.workers.dev` — the
+   slug rules are in
+   [`docs/cloudflare-gotchas.md`](./cloudflare-gotchas.md) §4. **Do
+   NOT merge this PR.**
+
+4. **Clone the target monitor** in Better Stack pointing at the
+   preview URL:
+   - Better Stack → Monitors → `loc-redirect-fr` → Duplicate.
+   - Edit the clone: change URL to
+     `https://chore-alert-chain-test-astro.aerts-jonathan.workers.dev/`.
+   - Keep the same Accept-Language header, the same status-code
+     assertion, the same Location-header assertion.
+   - Frequency: 3 min. Multi-region: enabled.
+
+5. **Wait for the alert to fire**. With 2 consecutive failures
+   needed at 3-min frequency, expect the incident to open within
+   ~6–8 min of the second failure.
+
+6. **Verify receipt on every configured channel**:
+   - Email: open the inbox the recruiter email forwards to.
+   - Slack / Discord: check the channel the webhook posts to.
+   - Webhook: check downstream receiver logs (if wired). If still
+     a placeholder, skip this row.
+
+   Record which channels received the alert and which didn't. A
+   missing channel is the test's real value — find it now, not
+   when prod actually breaks.
+
+7. **Clean up**:
+   - Delete the cloned monitor in Better Stack.
+   - Delete the throwaway branch:
+     ```bash
+     git checkout main
+     git push origin --delete chore/alert-chain-test
+     git branch -D chore/alert-chain-test
+     ```
+   - Within ~15 min, CF Workers Builds will GC the preview alias.
+
+### What this proves
+
+- Synthetic monitor assertion logic is correct (the assertion
+  actually fails on a real regression, not just a synthetic one).
+- Alert routing is configured (a failure produces an incident).
+- Every configured channel actually delivers (the operator gets
+  paged on the medium they expect).
+- Recovery works (when the preview goes back to healthy — by
+  deleting the branch or fixing the diff — the incident closes).
+
+### What this does NOT prove
+
+- That every monitor catches every kind of regression. Run this
+  procedure for **at least one monitor per severity tier** (one
+  `paging`, one `warning`) — minimum twice. Each tier may have a
+  different routing config.
+- That the webhook **payload** is parseable by downstream tooling.
+  Better Stack sends the same shape on every monitor; verify the
+  payload separately by POSTing a synthetic webhook to the
+  receiver and confirming it deserialises.
+- That the alert text is **useful**. Read the alert your operator
+  receives — does it say what's broken in actionable language, or
+  does it just say "monitor X is down" with no context? If the
+  latter: tune the Better Stack monitor description.
+
+### Cadence
+
+Re-validate **quarterly**. Add a calendar reminder; drift in
+alerting silently is one of the worst observability failure
+modes — you only find out it's broken when you actually need it.
+
+### Last validated
+
+| Date                                                          | Validator | Tiers tested | Channels verified | Notes |
+| ------------------------------------------------------------- | --------- | ------------ | ----------------- | ----- |
+| _(PENDING — first chain validation after Better Stack setup)_ |           |              |                   |       |
+
+When the chain has been validated, add a row above with the date,
+your handle, the severity tiers tested, the channels confirmed,
+and any issues found / fixed.
+
 ## Cost
 
 Free tier as configured (10 monitors @ 3-min, 1 monitor @ 5-min, 5

@@ -24,6 +24,23 @@ GoatCounter (which only tracks traffic-style events). The two don't
 overlap: GoatCounter answers _"how many visits"_, CF Web Analytics
 answers _"how fast did those visits feel"_.
 
+### Why Option B (manual snippet) and not Option A (automatic injection)
+
+Cloudflare offers two install paths for Web Analytics:
+
+| Option                  | What it is                                                                                                                                                                                                                                                      | Why we don't use it here                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A — Automatic**       | CF injects the beacon `<script>` into HTML responses **at the edge, after the Worker runs**. Toggle it on in the dashboard, nothing to ship in source.                                                                                                          | Conflicts with three things we deliberately layer on the response: HTMLRewriter (which stamps the per-request CSP nonce), `'strict-dynamic'` CSP (which makes the auto-injected script require the same nonce), and the Workers Cache API (which would cache a body that subsequently gets a foreign tag glued onto it, with subtle ordering issues). The failure modes are CSP-blocked-script (no RUM data, silent) or stamped-with-wrong-nonce after a cache hit (no RUM data, still silent). |
+| **B — Manual** (chosen) | We render the beacon `<script>` from `src/components/BaseHead.astro`. It flows through every layer the Worker controls — HTMLRewriter stamps it like any other script, CSP allowlists its host, the cache stores it bare and the nonce is replayed on each hit. | Deterministic, testable in CI, debuggable from `view-source`. The cost is one line of source plus the CSP allowance in `worker/security-headers.ts`.                                                                                                                                                                                                                                                                                                                                            |
+
+If you're tempted to "just turn on Option A to save a few lines",
+keep in mind that PR #38 tests
+([`tests/e2e/acceptance.spec.ts`](../tests/e2e/acceptance.spec.ts))
+explicitly assert the beacon GET fires on each locale page. Option
+A would make those tests pass only on the production-deployed
+edge, not on preview deployments — which is exactly when we want
+them to fail loudly.
+
 ### One-time setup
 
 1. **Add the site to CF Web Analytics**
