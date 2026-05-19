@@ -29,8 +29,16 @@ const stats: Array<{ num: string; labelKey: DictKey }> = [
               "Azure subscriptions governed"). Without wrapping they
               overflow into the neighbouring cell. text-balance asks the
               browser to distribute the wrap points evenly so a 2-line
-              label looks intentional rather than orphaned. */}
-          <div class="text-muted mt-2 text-[13px] leading-snug text-balance">
+              label looks intentional rather than orphaned.
+
+              min-h-[2.6em] reserves the height of 2 lines on EVERY cell
+              even when the label only takes 1 line — without this, the
+              numbers in the 2-line cells (Landing Zones, Azure
+              subscriptions) appear visually higher than the numbers in
+              the 1-line cells, breaking the horizontal alignment of the
+              "row of numbers". flex-end + the inner reserved block
+              keeps everything visually flush. */}
+          <div class="text-muted mt-2 flex min-h-[2.6em] items-start justify-center text-[13px] leading-snug text-balance">
             {t(s.labelKey, locale)}
           </div>
         </div>
