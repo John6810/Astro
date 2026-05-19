@@ -18,27 +18,28 @@ const stats: Array<{ num: string; labelKey: DictKey }> = [
   <div class="bg-line grid grid-cols-2 gap-px sm:grid-cols-3 lg:grid-cols-6">
     {
       stats.map((s) => (
-        <div class="bg-paper flex min-h-[110px] flex-col items-center justify-center p-5 text-center">
-          {/* The number must NEVER wrap (e.g. "500K€+" must stay on one
-              line). whitespace-nowrap is correct here. */}
+        <div class="bg-paper flex min-h-[110px] flex-col items-center px-5 pt-7 pb-5 text-center">
+          {/* Number is pinned at a FIXED offset from the cell top
+              (pt-7 = 28px) and never wraps — "500K€+" must stay on
+              one line. Because every cell uses the same pt-7, every
+              number sits at the same Y across the row regardless of
+              label length below. The grid (`grid-cols-6` on the
+              parent) auto-stretches all cells to the height of the
+              tallest, so the empty space at the bottom of 1-line
+              cells is invisible and consistent. */}
           <div class="text-accent text-3xl leading-none font-extrabold tracking-tight whitespace-nowrap">
             {s.num}
           </div>
           {/* The label CAN wrap — at lg breakpoint (6 cols) several
-              labels exceed the cell width ("Landing Zones from scratch",
-              "Azure subscriptions governed"). Without wrapping they
-              overflow into the neighbouring cell. text-balance asks the
-              browser to distribute the wrap points evenly so a 2-line
-              label looks intentional rather than orphaned.
-
-              min-h-[2.6em] reserves the height of 2 lines on EVERY cell
-              even when the label only takes 1 line — without this, the
-              numbers in the 2-line cells (Landing Zones, Azure
-              subscriptions) appear visually higher than the numbers in
-              the 1-line cells, breaking the horizontal alignment of the
-              "row of numbers". flex-end + the inner reserved block
-              keeps everything visually flush. */}
-          <div class="text-muted mt-2 flex min-h-[2.6em] items-start justify-center text-[13px] leading-snug text-balance">
+              labels exceed the cell width ("Landing Zones from
+              scratch", "Azure subscriptions governed"). Without
+              wrapping they overflow into the neighbouring cell.
+              text-balance distributes the wrap points evenly so a
+              2-line label looks intentional rather than orphaned.
+              No min-height needed here: the grid stretches cells to
+              equal height; reserving label space is pointless when
+              the number anchor is what controls alignment. */}
+          <div class="text-muted mt-3 text-[13px] leading-snug text-balance">
             {t(s.labelKey, locale)}
           </div>
         </div>
