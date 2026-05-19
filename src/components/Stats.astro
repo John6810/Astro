@@ -19,10 +19,18 @@ const stats: Array<{ num: string; labelKey: DictKey }> = [
     {
       stats.map((s) => (
         <div class="bg-paper flex min-h-[110px] flex-col items-center justify-center p-5 text-center">
+          {/* The number must NEVER wrap (e.g. "500K€+" must stay on one
+              line). whitespace-nowrap is correct here. */}
           <div class="text-accent text-3xl leading-none font-extrabold tracking-tight whitespace-nowrap">
             {s.num}
           </div>
-          <div class="text-muted mt-2 text-[13px] leading-snug whitespace-nowrap">
+          {/* The label CAN wrap — at lg breakpoint (6 cols) several
+              labels exceed the cell width ("Landing Zones from scratch",
+              "Azure subscriptions governed"). Without wrapping they
+              overflow into the neighbouring cell. text-balance asks the
+              browser to distribute the wrap points evenly so a 2-line
+              label looks intentional rather than orphaned. */}
+          <div class="text-muted mt-2 text-[13px] leading-snug text-balance">
             {t(s.labelKey, locale)}
           </div>
         </div>
