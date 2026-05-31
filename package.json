@@ -27,12 +27,12 @@
     "test:e2e:install": "playwright install --with-deps chromium firefox"
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.6",
+    "@astrojs/mdx": "^6.0.1",
     "@astrojs/rss": "^4.0.18",
-    "@astrojs/sitemap": "^3.7.1",
+    "@astrojs/sitemap": "^3.7.3",
     "@fontsource-variable/geist-mono": "^5.2.8",
     "@tailwindcss/vite": "4.3.0",
-    "astro": "6.3.3",
+    "astro": "6.4.2",
     "reading-time": "^1.5.0",
     "tailwindcss": "4.3.0"
   },
