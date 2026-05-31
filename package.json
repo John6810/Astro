@@ -38,16 +38,16 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
-    "@cloudflare/vitest-pool-workers": "0.16.6",
-    "@cloudflare/workers-types": "4.20260517.1",
+    "@cloudflare/vitest-pool-workers": "0.16.10",
+    "@cloudflare/workers-types": "4.20260531.1",
     "@playwright/test": "1.60.0",
-    "@vitest/coverage-istanbul": "4.1.6",
+    "@vitest/coverage-istanbul": "4.1.7",
     "prettier": "^3.3.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "typescript": "^6.0.3",
-    "vitest": "4.1.6",
-    "wrangler": "4.92.0"
+    "vitest": "4.1.7",
+    "wrangler": "4.95.0"
   },
   "packageManager": "pnpm@9.15.0"
 }
